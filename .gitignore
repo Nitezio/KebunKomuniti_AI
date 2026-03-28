@@ -1,6 +1,9 @@
 # Environments
 .env
 
+# Internal AI Tracking (DO NOT COMMIT)
+.gemini/
+
 # Docker Logs
 kebunkomuniti-core/gateway-nginx/logs/*.log
 

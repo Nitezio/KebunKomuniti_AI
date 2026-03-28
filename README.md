@@ -9,7 +9,7 @@ KebunKomuniti AI is a decentralized community farming platform designed to turn 
 ## 🚀 The Core Concept
 
 Urban food security is often hindered by high delivery costs for small-scale produce. KebunKomuniti AI solves this by:
-- **AI Plant Doctor:** Uses computer vision (Gemini 1.5 Flash) to diagnose plant diseases and provide localized fixes.
+- **AI Plant Doctor:** Uses computer vision (Gemini 2.5 Flash) to diagnose plant diseases and provide localized fixes.
 - **Neighborhood Aggregator:** A proprietary algorithm that clusters nearby micro-surpluses (e.g., 500g from 20 houses) into single 10kg bulk listings.
 - **Hyper-Local Geo-Fencing:** Filters marketplace results to a walkable 3km-5km radius, eliminating traditional logistics costs.
 

@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import json #to read JSON from gemini 
+from supabase import create_client, Client
 
 # Load the API key from the .env file
 load_dotenv()
@@ -14,7 +16,7 @@ if not API_KEY:
 # Configure the Gemini API
 genai.configure(api_key=API_KEY)
 
-# We use Gemini 1.5 Flash because it is incredibly fast and multimodal (takes images + text)
+# We use Gemini 2.5 Flash because it is incredibly fast and multimodal (takes images + text)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 app = FastAPI(title="KebunKomuniti AI Service")
@@ -26,6 +28,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+#Setup Supabase
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+#Connect if we have real key
+supabase: Client | None = None
+if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "Waiting_for_teammate":
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.get("/")
 def read_root():
@@ -50,25 +61,58 @@ async def diagnose_plant(file: UploadFile = File(...)):
             "data": img_bytes
         }
 
-        # 4. The Prompt Engineering (This is where you control the AI's personality)
+        # 4. The Prompt Engineering (Day 2: The Armor Upgrade)
         prompt = """
-        You are a friendly, expert botanist helping a beginner urban farmer in Malaysia. 
-        Look at this image. 
-        1. Identify the plant if possible.
-        2. Diagnose its health. If it looks sick, explain what the problem likely is (e.g., nitrogen deficiency, pests, overwatering).
-        3. Provide a very short, simple, organic remedy they can do at home.
-        Keep the entire response under 3 sentences and be encouraging!
+        You are an expert agricultural AI assistant for the 'KebunKomuniti' Malaysian urban farming app.
+        
+        CRITICAL STEP 1: Analyze the image. Does it actually contain a plant, leaf, crop, vegetable, or garden?
+        If the image does NOT contain a plant (e.g., it is a person, a keyboard, a dog, a blank screen, or a coffee cup), you must safely reject it.
+        
+        CRITICAL STEP 2: You MUST respond STRICTLY with a valid JSON object. Do not include any conversational text. Do not use markdown formatting like ```json.
+        
+        Use exactly this structure:
+        {
+            "is_plant": true or false,
+            "plant_name": "Common name in English/Malay (or 'N/A' if not a plant)",
+            "is_healthy": true or false (must be false if not a plant),
+            "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected' if invalid image",
+            "confidence": "A percentage from 0 to 100 on how sure you are",
+            "remedy_advice": "Short household remedy, or 'Please upload a clear picture of a leaf or plant.' if invalid image"
+        }
         """
 
         # 5. Send both the prompt and the image to Gemini
         response = model.generate_content([prompt, image_part])
 
-        # 6. Return the JSON to the mobile app
+        #Turn gemini text into a real python dictionary
+        try:
+            #clear text in case gemini accidentally added markdown formatting
+            clean_text = response.text.replace("```json\n", "").replace("```", "").strip()
+            diagnosis_data = json.loads(clean_text)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="AI didn't return valid JSON.")
+        
+        #Save to database (If its a plant AND we have keys)
+        if diagnosis_data.get("is_plant") == True and supabase:
+            try:
+                #Assume a table called 'diagnoses'
+                supabase.table("diagnoses").insert({
+                    "plant_name": diagnosis_data.get("plant_name"),
+                    "is_healthy": diagnosis_data.get("is_healthy"),
+                    "disease_name": diagnosis_data.get("disease_name"),
+                    "remedy_advice": diagnosis_data.get("remedy_advice")
+                }).execute()
+                print("Successfully saved to Supabase!")
+            except Exception as e:
+                print(f"Warning: Couldn't save to database : {e}")
+
+        # 6. Return the final data to the mobile app
         return {
             "success": True,
             "filename": file.filename,
-            "diagnosis": response.text
+            "diagnosis": diagnosis_data
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

@@ -21,8 +21,8 @@ services:
       context: ./service-ai
       dockerfile: Dockerfile
     container_name: kebunkomuniti-ai
-    environment:
-      - PORT=8000
+    env_file:
+      - .env
     networks:
       - kebunkomuniti-network
     restart: always
@@ -32,8 +32,8 @@ services:
       context: ./service-inventory
       dockerfile: Dockerfile
     container_name: kebunkomuniti-inventory
-    environment:
-      - PORT=8001
+    env_file:
+      - .env
     networks:
       - kebunkomuniti-network
     restart: always

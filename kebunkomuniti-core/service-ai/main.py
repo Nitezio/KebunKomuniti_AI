@@ -32,8 +32,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # We use Gemini 2.5 Flash because it is incredibly fast and multimodal (takes images + text)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
-app = FastAPI(title="KebunKomuniti AI Service")
-
 # Allow the frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,

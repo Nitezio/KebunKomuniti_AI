@@ -18,29 +18,34 @@ Urban food security is often hindered by high delivery costs for small-scale pro
 We use a **Dockerized Microservices Architecture** to ensure fault isolation and scalability:
 - **Frontend:** Flutter Mobile App (Android/iOS).
 - **API Gateway:** NGINX (Reverse Proxy, Rate-Limiting, Security Headers).
-- **Service AI:** Python/FastAPI + Google Gemini API.
+- **Service AI:** Python/FastAPI + Google Gemini 2.5 Flash API + Supabase DB.
 - **Service Inventory:** Python/FastAPI + Supabase (PostgreSQL/PostGIS).
 - **Orchestration:** Docker Compose (Local/Demo Environment).
+
+---
+
+## 🛡️ Security & Auditing (Defense-in-Depth)
+
+The platform is built with a multi-layered security approach:
+1. **Network Level (NGINX):** Rate-limited to 10 requests per second per IP to mitigate DDoS.
+2. **Application Level (FastAPI):** Internal rate-limiting (5 requests/minute) to protect Gemini API keys from accidental spam.
+3. **Data Level (Validation):** Multi-modal guardrails ensure the AI only processes farming-related images.
+4. **Environment Security:** Secrets are managed via `.env` and are strictly excluded from repository tracking.
 
 ---
 
 ## 💻 Getting Started (For Developers)
 
 ### 1. Prerequisites
-Ensure you have the following installed:
-- [Docker & Docker Compose](https://www.docker.com/products/docker-desktop/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Git](https://git-scm.com/)
-- [VS Code](https://code.visualstudio.com/) (Recommended for Backend/DevOps)
-- [Android Studio](https://developer.android.com/studio) (Required for Flutter development)
+- [VS Code](https://code.visualstudio.com/)
 
 ### 2. Initial Setup
 ```bash
-# Clone the repository
 git clone https://github.com/Nitezio/KebunKomuniti_AI.git
 cd KebunKomuniti_AI
-
-# Switch to the infrastructure branch
-git checkout chore/initial-infrastructure
+git checkout nitesh
 ```
 
 ### 3. Environment Configuration
@@ -49,7 +54,7 @@ Navigate to the core directory and create your local environment file:
 cd kebunkomuniti-core
 cp .env.example .env
 ```
-*Edit the `.env` file with your specific API keys (Gemini, Supabase).*
+*Edit the `.env` file with your `GEMINI_API_KEY` and `SUPABASE` credentials.*
 
 ### 4. Running the Ecosystem
 ```bash
@@ -59,40 +64,13 @@ The **API Gateway** will be available at `http://localhost:80`.
 
 ---
 
-## 🛠️ Contribution & Workflow
-
-To maintain a professional environment and prevent merge conflicts, we follow a **Feature-Branch Workflow**.
-
-### Git Workflow Steps:
-1. **Sync Main:** `git pull origin main`
-2. **Create Feature Branch:** `git checkout -b feature/your-task-name`
-3. **Stage Changes:** `git add .`
-4. **Commit (Conventional Commits):** `git commit -m "feat: add plant diagnosis endpoint"`
-5. **Push:** `git push origin feature/your-task-name`
-
-### Role-Based Access Control (RBAC):
-- **DevOps/Infrastructure:** Responsible for `docker-compose`, `nginx.conf`, and `Dockerfile`s.
-- **AI Lead:** Responsible for `service-ai/` logic and Gemini prompts.
-- **DB Lead:** Responsible for `service-inventory/` and Supabase schemas.
-- **Mobile Lead:** Responsible for the Flutter codebase in `app-frontend/`.
-
----
-
-## 🛡️ Security & Auditing
-
-Every contribution is audited by our **Security Auditor** skill.
-- **Rate Limiting:** NGINX is configured to 10r/s per IP to protect our free API tiers.
-- **Secrets:** Never commit `.env` files. They are automatically ignored by our global `.gitignore`.
-- **Headers:** Secure headers (XSS-Protection, CSP, etc.) are enforced at the gateway level.
-
----
-
 ## 🗺️ Project Roadmap
 - [x] Initial Infrastructure & NGINX Gateway
 - [x] Dockerization of Microservices
-- [ ] AI Service Integration (Gemini 1.5 Flash)
-- [ ] Inventory & Spatial Engine (Supabase/PostGIS)
-- [ ] Flutter UI Prototype
+- [x] AI Service Integration (Gemini 2.5 Flash + Supabase)
+- [x] Application-Level Security & Rate Limiting
+- [ ] Inventory & Spatial Engine implementation (Service Inventory)
+- [ ] Flutter UI Prototype Integration
 - [ ] Ngrok Tunneling for Live Demo
 
 ---

@@ -1,20 +1,33 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import json #to read JSON from gemini 
 from supabase import create_client, Client
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Load the API key from the .env file
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Configure the Gemini API
+genai.configure(api_key=API_KEY)
+#Setup Supabase
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
 if not API_KEY:
     raise ValueError("No GEMINI_API_KEY found in environment variables!")
 
-# Configure the Gemini API
-genai.configure(api_key=API_KEY)
+app = FastAPI(title="KebunKomuniti AI Service")
+
+#Rate Limiter Setup
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # We use Gemini 2.5 Flash because it is incredibly fast and multimodal (takes images + text)
 model = genai.GenerativeModel('gemini-2.5-flash')
@@ -29,13 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#Setup Supabase
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 #Connect if we have real key
 supabase: Client | None = None
-if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "Waiting_for_teammate":
+if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "waiting_for_teammate":
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.get("/")
@@ -43,7 +52,8 @@ def read_root():
     return {"status": "AI Microservice is running securely!"}
 
 @app.post("/api/ai/diagnose")
-async def diagnose_plant(file: UploadFile = File(...)):
+@limiter.limit("5/minute") # Only allow 5 requests per minute per IP
+async def diagnose_plant(request: Request , file: UploadFile = File(...)):
     """
     Receives an image of a plant, sends it to Gemini, and returns a diagnosis.
     """

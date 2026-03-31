@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Miscellaneous
 *.class
 *.log
@@ -43,3 +44,41 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+=======
+# Environments
+.env
+
+# Internal AI Tracking (DO NOT COMMIT)
+.gemini/
+
+# Docker Logs
+kebunkomuniti-core/gateway-nginx/logs/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.env
+
+# Flutter/Dart (For team members)
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+ios/.generated/
+android/.gradle/
+local.properties
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+>>>>>>> 224b6bb846a4a459d763d76ccc26098edb511b42

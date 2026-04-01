@@ -1,3 +1,21 @@
+<<<<<<< HEAD
+# kebun_komuniti
+
+A new Flutter project.
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+=======
 # KebunKomuniti AI 🌿
 
 **Empowering Urban Food Security through AI-Driven Hyper-Local Aggregation.**
@@ -75,3 +93,4 @@ The **API Gateway** will be available at `http://localhost:80`.
 
 ---
 *Created for PutraHack 2026. Built with 💚 for a sustainable future.*
+>>>>>>> 224b6bb846a4a459d763d76ccc26098edb511b42

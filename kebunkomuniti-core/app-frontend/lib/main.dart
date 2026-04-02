@@ -6,7 +6,7 @@ void main() {
 }
 
 class KebunKomunitiApp extends StatelessWidget {
-  const KebunKomunitiApp({Key? key}) : super(key: key);
+  const KebunKomunitiApp({super.key});
 
   @override
   Widget build(BuildContext context) {

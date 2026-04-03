@@ -11,7 +11,7 @@ class ApiService {
   // NGINX intercepts '/api/vision/' and proxies it to the backend.
   // The backend specifically expects '/api/ai/diagnose'.
   // Combining them gets us safely through the gateway without changing backend code!
-  static const String diagnoseUrl = '$gatewayUrl/api/vision/api/ai/diagnose';
+  static const String diagnoseUrl = '$gatewayUrl/api/ai/diagnose';
 
   // --- DAY 1: Real Network Ping Test ---
   // Now pings the actual NGINX /health route created by your teammate

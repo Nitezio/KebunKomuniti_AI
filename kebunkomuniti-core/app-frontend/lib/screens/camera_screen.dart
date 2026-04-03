@@ -262,7 +262,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       children: [
                         Icon(Icons.healing, size: 18, color: Colors.orange.shade800),
                         const SizedBox(width: 8),
-                        Expanded( # <--- ADDED THIS TO FIX LINE 283
+                        Expanded(
                           child: Text(
                             "Treatment Plan", 
                             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800)
@@ -274,7 +274,7 @@ class _CameraScreenState extends State<CameraScreen> {
                     Text(
                       _diagnosisData!['remedy_advice'] ?? "No remedy advice provided.", 
                       style: TextStyle(color: Colors.orange.shade900, height: 1.5),
-                      softWrap: true, # <--- ENSURE REMEDY TEXT WRAPS TOO
+                      softWrap: true,
                     ),
                   ],
                 ),
@@ -294,7 +294,7 @@ class _CameraScreenState extends State<CameraScreen> {
         children: [
           Icon(icon, size: 20, color: Colors.grey.shade400),
           const SizedBox(width: 12),
-          Expanded( # <--- ADDED THIS TO PREVENT OVERFLOW
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -303,7 +303,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 Text(
                   value, 
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87),
-                  softWrap: true, # <--- ENABLES TEXT WRAPPING
+                  softWrap: true,
                 ),
               ],
             ),

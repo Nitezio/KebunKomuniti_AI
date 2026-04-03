@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
             pinned: true,
             backgroundColor: Colors.green.shade700,
             flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true, // Fixed: Centered Title
               title: const Text("My Account", style: TextStyle(fontWeight: FontWeight.bold)),
               background: Container(
                 decoration: BoxDecoration(
@@ -76,31 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 2. User Stats (Impact Section)
-                  const Text("My Impact", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _buildStatCard("12kg", "Sold", Icons.shopping_bag_outlined, Colors.blue),
-                      const SizedBox(width: 12),
-                      _buildStatCard("5", "Badges", Icons.emoji_events_outlined, Colors.orange),
-                      const SizedBox(width: 12),
-                      _buildStatCard("98%", "Trust", Icons.verified_user_outlined, Colors.green),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // 3. Activity Section (Grab Style)
-                  const Text("Recent Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildActivityRow("AI Scan: Tomato Leaf", "2 hours ago", Icons.document_scanner),
-                  _buildActivityRow("Sold 2kg Chili", "Yesterday", Icons.sell),
-                  _buildActivityRow("Earned 'Green Thumb' Badge", "3 days ago", Icons.stars),
-
-                  const SizedBox(height: 32),
-
-                  // 4. Settings Section (Standard Row Look)
+                  // 2. Settings Section (Moved Up)
                   const Text("Account Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   _buildSettingRow("Language", "English (MY)", Icons.language),
@@ -108,37 +85,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   ListTile(
                     onTap: _testConnection,
-                    leading: const Icon(Icons.sync, color: Colors.grey),
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.sync, color: Colors.grey.shade600),
                     title: const Text("Sync with Hub"),
-                    subtitle: const Text("Check microservice connectivity"),
-                    trailing: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
+                    trailing: _isLoading 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                      : const Icon(Icons.chevron_right, color: Colors.grey),
                   ),
+
+                  const SizedBox(height: 40),
+
+                  // 3. Activity Section (Moved to Bottom)
+                  const Text("Recent Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildActivityRow("AI Scan: Tomato Leaf", "2 hours ago", Icons.document_scanner),
+                  _buildActivityRow("Sold 2kg Chili", "Yesterday", Icons.sell),
+                  _buildActivityRow("Earned 'Green Thumb' Badge", "3 days ago", Icons.stars),
+                  
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String value, String label, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          ],
-        ),
       ),
     );
   }

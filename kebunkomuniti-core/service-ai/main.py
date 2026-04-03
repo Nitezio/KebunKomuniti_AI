@@ -78,23 +78,26 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
             "data": img_bytes
         }
 
-        # 4. The Prompt Engineering (Day 2: The Armor Upgrade)
+        # 4. The Prompt Engineering (The Localized Malaysian Upgrade)
         prompt = """
         You are an expert agricultural AI assistant for the 'KebunKomuniti' Malaysian urban farming app.
+        Your primary users are gardening in Malaysia's tropical, high-humidity climate. 
+        Pay special attention to common local pests such as Aphids, Mealybugs (Koya), Whiteflies, and Spider Mites, as well as fungal issues like Powdery Mildew.
         
         CRITICAL STEP 1: Analyze the image. Does it actually contain a plant, leaf, crop, vegetable, or garden?
         If the image does NOT contain a plant (e.g., it is a person, a keyboard, a dog, a blank screen, or a coffee cup), you must safely reject it.
         
-        CRITICAL STEP 2: You MUST respond STRICTLY with a valid JSON object. Do not include any conversational text. Do not use markdown formatting like ```json.
+        CRITICAL STEP 2: You MUST respond STRICTLY with a valid JSON object. Do not include any conversational text. Do not use markdown formatting.
         
         Use exactly this structure:
         {
             "is_plant": true or false,
             "plant_name": "Common name in English/Malay (or 'N/A' if not a plant)",
             "is_healthy": true or false (must be false if not a plant),
-            "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected' if invalid image",
+            "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected'",
             "confidence": "A percentage from 0 to 100 on how sure you are",
-            "remedy_advice": "Short household remedy, or 'Please upload a clear picture of a leaf or plant.' if invalid image"
+            "diy_remedy": "A practical, zero-cost home solution (e.g., dish soap, neem oil spray). 'N/A' if invalid.",
+            "commercial_remedy": "What specific product they should buy from a Malaysian nursery. 'N/A' if invalid."
         }
         """
 

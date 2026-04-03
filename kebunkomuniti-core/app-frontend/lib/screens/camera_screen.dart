@@ -35,7 +35,6 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _analyzeWithAI() async {
     if (_imageFile == null) return;
-
     setState(() {
       _isLoading = true;
       _diagnosisData = null;
@@ -49,8 +48,7 @@ class _CameraScreenState extends State<CameraScreen> {
       if (result != null && result['success'] == true) {
         _diagnosisData = result['diagnosis'];
       } else {
-        _errorMessage =
-            "Failed to connect. Are you and the backend on the same Wi-Fi?";
+        _errorMessage = "Connection failed. Check your network link.";
       }
     });
   }
@@ -58,88 +56,117 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7FAF8), // Very soft green-tinted white
       appBar: AppBar(
+        elevation: 0,
         title: const Text(
-          'Plant Doctor AI',
-          style: TextStyle(color: Colors.white),
+          'Plant Diagnostics',
+          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
         ),
-        backgroundColor: Colors.green[700],
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Image Container
               Container(
-                height: 250,
-                width: 250,
+                height: 280,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green, width: 2),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
                 child: _imageFile != null
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.file(_imageFile!, fit: BoxFit.cover),
-                      )
-                    : const Center(
-                        child: Text(
-                          "No Leaf Scanned",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.file(_imageFile!, fit: BoxFit.cover),
+                )
+                    : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.energy_savings_leaf_outlined, size: 60, color: Colors.green.shade200),
+                    const SizedBox(height: 16),
+                    Text("No plant scanned yet", style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
+              // Action Buttons
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text("Camera"),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt_outlined),
+                      label: const Text("Camera"),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        side: BorderSide(color: Colors.green.shade300),
+                        foregroundColor: Colors.green.shade700,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text("Gallery"),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: const Text("Gallery"),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        side: BorderSide(color: Colors.green.shade300),
+                        foregroundColor: Colors.green.shade700,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
+              // Analyze Button
               if (_imageFile != null && _diagnosisData == null && !_isLoading)
-                ElevatedButton.icon(
+                FilledButton.icon(
                   onPressed: _analyzeWithAI,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text("Analyze with AI"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 15,
-                    ),
+                  label: const Text("Analyze with AI", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
 
-              if (_isLoading) const CircularProgressIndicator(),
+              if (_isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(color: Colors.green),
+                  ),
+                ),
 
               if (_errorMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
+                  child: Text(_errorMessage, style: TextStyle(color: Colors.red.shade700)),
                 ),
 
               if (_diagnosisData != null) _buildDiagnosisCard(),
+              const SizedBox(height: 40), // Bottom padding
             ],
           ),
         ),
@@ -150,25 +177,25 @@ class _CameraScreenState extends State<CameraScreen> {
   Widget _buildDiagnosisCard() {
     if (_diagnosisData!['is_plant'] == false) {
       return Container(
-        margin: const EdgeInsets.only(top: 20), // FIXED TYPO HERE
-        padding: const EdgeInsets.all(15),
+        margin: const EdgeInsets.only(top: 20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.red[50],
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.red),
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.red.shade200),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.warning, color: Colors.red, size: 40),
-            SizedBox(width: 15),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.red.shade100, shape: BoxShape.circle),
+              child: Icon(Icons.warning_rounded, color: Colors.red.shade700),
+            ),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
-                "Not a plant detected! Please take a clear photo of a leaf.",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                "Not a plant detected! Please scan a clear leaf.",
+                style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -178,76 +205,93 @@ class _CameraScreenState extends State<CameraScreen> {
 
     bool isHealthy = _diagnosisData!['is_healthy'];
 
-    return Card(
-      margin: const EdgeInsets.only(top: 20), // FIXED TYPO HERE
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, 4))],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  isHealthy ? Icons.check_circle : Icons.coronavirus,
-                  color: isHealthy ? Colors.green : Colors.red,
-                  size: 30,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isHealthy ? Colors.green.shade50 : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    isHealthy ? Icons.eco_rounded : Icons.coronavirus_rounded,
+                    color: isHealthy ? Colors.green.shade600 : Colors.orange.shade600,
+                    size: 28,
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  isHealthy ? "Healthy Plant" : "Disease Detected",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isHealthy ? Colors.green : Colors.red,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isHealthy ? "Healthy Plant" : "Action Required",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isHealthy ? Colors.green.shade800 : Colors.orange.shade800),
+                      ),
+                      Text("AI Confidence: ${_diagnosisData!['confidence']}%", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                    ],
                   ),
                 ),
               ],
             ),
-            const Divider(height: 30, thickness: 1),
-            _buildInfoRow("Species:", _diagnosisData!['plant_name']),
-            if (!isHealthy)
-              _buildInfoRow(
-                "Issue:",
-                _diagnosisData!['disease_name'],
-                color: Colors.red,
-              ),
-            _buildInfoRow("AI Confidence:", "${_diagnosisData!['confidence']}"),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider(height: 1)),
+            _buildInfoRow("Species", _diagnosisData!['plant_name'], Icons.local_florist_outlined),
+            if (!isHealthy) _buildInfoRow("Issue", _diagnosisData!['disease_name'], Icons.bug_report_outlined, color: Colors.orange.shade800),
 
             if (!isHealthy) ...[
-              const SizedBox(height: 15),
-              const Text(
-                "Treatment Plan:",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                _diagnosisData!['remedy_advice'],
-                style: TextStyle(color: Colors.grey[800], height: 1.5),
-              ),
-            ],
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.healing, size: 18, color: Colors.orange.shade800),
+                        const SizedBox(width: 8),
+                        Text("Treatment Plan", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(_diagnosisData!['remedy_advice'], style: TextStyle(color: Colors.orange.shade900, height: 1.5)),
+                  ],
+                ),
+              )
+            ]
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? color}) {
+  Widget _buildInfoRow(String label, String value, IconData icon, {Color? color}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "$label ",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 16, color: color ?? Colors.black),
-            ),
+          Icon(icon, size: 20, color: Colors.grey.shade400),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87)),
+            ],
           ),
         ],
       ),

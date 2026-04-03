@@ -4,7 +4,7 @@ import 'dart:convert';
 
 class ApiService {
   // Pointing to your teammate's machine, but now hitting the NGINX Gateway (Port 80)
-  static const String gatewayIp = '10.0.2.2';
+  static const String gatewayIp = '10.18.46.238';
   static const String gatewayUrl = 'http://$gatewayIp';
 
   // THE ROUTING FIX:

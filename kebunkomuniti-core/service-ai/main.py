@@ -113,15 +113,15 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
         if diagnosis_data.get("is_plant") == True and supabase:
             try:
                 #Assume a table called 'diagnoses'
-                supabase.table("diagnoses").insert({
+                insert_result = supabase.table("diagnoses").insert({
                     "plant_name": diagnosis_data.get("plant_name"),
                     "is_healthy": diagnosis_data.get("is_healthy"),
                     "disease_name": diagnosis_data.get("disease_name"),
                     "remedy_advice": diagnosis_data.get("remedy_advice")
                 }).execute()
-                print("Successfully saved to Supabase!")
+                print(f"✅ Supabase Save Success! Inserted ID: {insert_result.data}")
             except Exception as e:
-                print(f"Warning: Couldn't save to database : {e}")
+                print(f"❌ SUPABASE ERROR: {e}")
 
         # 6. Return the final data to the mobile app
         return {

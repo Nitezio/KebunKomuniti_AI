@@ -13,11 +13,10 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // The actual screens you have built!
   final List<Widget> _pages = [
-    const MapScreen(),      // Tab 0: The Community Map
-    const CameraScreen(),   // Tab 1: The AI Plant Doctor
-    HomeScreen(),           // Tab 2: The Network Ping Test
+    const MapScreen(),
+    const CameraScreen(),
+    const HomeScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -29,25 +28,33 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Community Map',
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _pages[_selectedIndex],
+      ),
+      // Upgraded to the trendy Material 3 NavigationBar
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onItemTapped,
+        backgroundColor: Colors.white,
+        indicatorColor: Colors.green.shade100, // Soft sage indicator
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map, color: Colors.green),
+            label: 'Surplus Map',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt),
-            label: 'Plant Doctor',
+          NavigationDestination(
+            icon: Icon(Icons.document_scanner_outlined),
+            selectedIcon: Icon(Icons.document_scanner, color: Colors.green),
+            label: 'AI Doctor',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.network_ping),
-            label: 'Network Test',
+          NavigationDestination(
+            icon: Icon(Icons.hub_outlined),
+            selectedIcon: Icon(Icons.hub, color: Colors.green),
+            label: 'System Hub',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green[700],
-        onTap: _onItemTapped,
       ),
     );
   }

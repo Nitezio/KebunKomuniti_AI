@@ -12,9 +12,11 @@ class KebunKomunitiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'KebunKomuniti',
+      // Inside main.dart
       theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.grey[50],
+        useMaterial3: true, // <--- Add this!
+        colorSchemeSeed: Colors.green, // Lets Flutter generate a perfect matching palette
+        // ...
       ),
       home: const MainScreen(), // Change this line!
       debugShowCheckedModeBanner: false,

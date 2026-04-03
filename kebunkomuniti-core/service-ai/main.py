@@ -55,9 +55,11 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
     """
     Receives an image of a plant, sends it to Gemini, and returns a diagnosis.
     """
-    # 1. Validate the file type
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File provided is not an image.")
+    # 1. Be forgiving with the frontend's file type!
+    mime_type = file.content_type
+    if not mime_type or not mime_type.startswith("image/"):
+        print("Warning: Frontend forgot the image tag. Forcing image/jpeg...")
+        mime_type = "image/jpeg"
 
     try:
         # 2. Read the image bytes into memory
@@ -65,7 +67,7 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
         
         # 3. Format the image exactly how the Gemini API wants it
         image_part = {
-            "mime_type": file.content_type,
+            "mime_type": mime_type, # <-- USE THE NEW VARIABLE HERE!
             "data": img_bytes
         }
 

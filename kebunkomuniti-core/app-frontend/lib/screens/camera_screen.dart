@@ -247,8 +247,8 @@ class _CameraScreenState extends State<CameraScreen> {
               ],
             ),
             const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider(height: 1)),
-            _buildInfoRow("Species", _diagnosisData!['plant_name'], Icons.local_florist_outlined),
-            if (!isHealthy) _buildInfoRow("Issue", _diagnosisData!['disease_name'], Icons.bug_report_outlined, color: Colors.orange.shade800),
+            _buildInfoRow("Species", _diagnosisData!['plant_name'] ?? "Unknown", Icons.local_florist_outlined),
+            if (!isHealthy) _buildInfoRow("Issue", _diagnosisData!['disease_name'] ?? "Unknown Issue", Icons.bug_report_outlined, color: Colors.orange.shade800),
 
             if (!isHealthy) ...[
               const SizedBox(height: 20),
@@ -266,7 +266,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(_diagnosisData!['remedy_advice'], style: TextStyle(color: Colors.orange.shade900, height: 1.5)),
+                    Text(_diagnosisData!['remedy_advice'] ?? "No remedy advice provided.", style: TextStyle(color: Colors.orange.shade900, height: 1.5)),
                   ],
                 ),
               )

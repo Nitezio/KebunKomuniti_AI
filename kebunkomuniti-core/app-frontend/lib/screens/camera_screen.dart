@@ -262,11 +262,20 @@ class _CameraScreenState extends State<CameraScreen> {
                       children: [
                         Icon(Icons.healing, size: 18, color: Colors.orange.shade800),
                         const SizedBox(width: 8),
-                        Text("Treatment Plan", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
+                        Expanded( # <--- ADDED THIS TO FIX LINE 283
+                          child: Text(
+                            "Treatment Plan", 
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800)
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(_diagnosisData!['remedy_advice'] ?? "No remedy advice provided.", style: TextStyle(color: Colors.orange.shade900, height: 1.5)),
+                    Text(
+                      _diagnosisData!['remedy_advice'] ?? "No remedy advice provided.", 
+                      style: TextStyle(color: Colors.orange.shade900, height: 1.5),
+                      softWrap: true, # <--- ENSURE REMEDY TEXT WRAPS TOO
+                    ),
                   ],
                 ),
               )

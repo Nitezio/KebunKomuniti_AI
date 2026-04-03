@@ -50,9 +50,9 @@ class _MainScreenState extends State<MainScreen> {
             label: 'AI Doctor',
           ),
           NavigationDestination(
-            icon: Icon(Icons.hub_outlined),
-            selectedIcon: Icon(Icons.hub, color: Colors.green),
-            label: 'System Hub',
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded, color: Colors.green),
+            label: 'Account',
           ),
         ],
       ),

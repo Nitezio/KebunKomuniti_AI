@@ -31,14 +31,15 @@ def health_check():
 
 @app.post("/add-item")
 async def add_item(item: InventoryItem):
-    """Saves a new vegetable to Supabase with its GPS location."""
     try:
-        # Convert lat/lng to the PostGIS Geography format
-        point = f"POINT({item.lng} {item.lat})"
+        point = f"POINT({item.lng} {item.lat})"   
         
+        # We are adding lat and lng here so the Algo can read them easily later!
         data = {
             "item_name": item.item_name,
             "weight_kg": item.weight_kg,
+            "lat": item.lat,
+            "lng": item.lng,
             "location": point
         }
         

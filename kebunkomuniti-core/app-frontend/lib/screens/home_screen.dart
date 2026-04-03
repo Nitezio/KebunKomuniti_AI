@@ -100,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 12),
                   _buildActivityRow("AI Scan: Tomato Leaf", "2 hours ago", Icons.document_scanner),
                   _buildActivityRow("Sold 2kg Chili", "Yesterday", Icons.sell),
-                  _buildActivityRow("Earned 'Green Thumb' Badge", "3 days ago", Icons.stars),
                   
                   const SizedBox(height: 40),
                 ],

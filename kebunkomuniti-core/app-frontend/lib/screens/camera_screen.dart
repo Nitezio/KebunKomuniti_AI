@@ -4,7 +4,7 @@ import 'dart:io';
 import '../services/api_service.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({Key? key}) : super(key: key);
+  const CameraScreen({super.key});
 
   @override
   _CameraScreenState createState() => _CameraScreenState();
@@ -49,7 +49,8 @@ class _CameraScreenState extends State<CameraScreen> {
       if (result != null && result['success'] == true) {
         _diagnosisData = result['diagnosis'];
       } else {
-        _errorMessage = "Failed to connect. Are you and the backend on the same Wi-Fi?";
+        _errorMessage =
+            "Failed to connect. Are you and the backend on the same Wi-Fi?";
       }
     });
   }
@@ -58,7 +59,10 @@ class _CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plant Doctor AI', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Plant Doctor AI',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.green[700],
       ),
       body: SingleChildScrollView(
@@ -76,10 +80,15 @@ class _CameraScreenState extends State<CameraScreen> {
                 ),
                 child: _imageFile != null
                     ? ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Image.file(_imageFile!, fit: BoxFit.cover),
-                )
-                    : const Center(child: Text("No Leaf Scanned", style: TextStyle(color: Colors.grey))),
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.file(_imageFile!, fit: BoxFit.cover),
+                      )
+                    : const Center(
+                        child: Text(
+                          "No Leaf Scanned",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
               ),
               const SizedBox(height: 20),
 
@@ -109,21 +118,28 @@ class _CameraScreenState extends State<CameraScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange[600],
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 15,
+                    ),
                   ),
                 ),
 
-              if (_isLoading)
-                const CircularProgressIndicator(),
+              if (_isLoading) const CircularProgressIndicator(),
 
               if (_errorMessage.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
-                  child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
 
-              if (_diagnosisData != null)
-                _buildDiagnosisCard(),
+              if (_diagnosisData != null) _buildDiagnosisCard(),
             ],
           ),
         ),
@@ -148,7 +164,11 @@ class _CameraScreenState extends State<CameraScreen> {
             Expanded(
               child: Text(
                 "Not a plant detected! Please take a clear photo of a leaf.",
-                style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -177,24 +197,36 @@ class _CameraScreenState extends State<CameraScreen> {
                 const SizedBox(width: 10),
                 Text(
                   isHealthy ? "Healthy Plant" : "Disease Detected",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isHealthy ? Colors.green : Colors.red),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isHealthy ? Colors.green : Colors.red,
+                  ),
                 ),
               ],
             ),
             const Divider(height: 30, thickness: 1),
             _buildInfoRow("Species:", _diagnosisData!['plant_name']),
-            if (!isHealthy) _buildInfoRow("Issue:", _diagnosisData!['disease_name'], color: Colors.red),
-            _buildInfoRow("AI Confidence:", "${_diagnosisData!['confidence']}%"),
+            if (!isHealthy)
+              _buildInfoRow(
+                "Issue:",
+                _diagnosisData!['disease_name'],
+                color: Colors.red,
+              ),
+            _buildInfoRow("AI Confidence:", "${_diagnosisData!['confidence']}"),
 
             if (!isHealthy) ...[
               const SizedBox(height: 15),
-              const Text("Treatment Plan:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text(
+                "Treatment Plan:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
               const SizedBox(height: 5),
               Text(
                 _diagnosisData!['remedy_advice'],
                 style: TextStyle(color: Colors.grey[800], height: 1.5),
               ),
-            ]
+            ],
           ],
         ),
       ),
@@ -207,8 +239,16 @@ class _CameraScreenState extends State<CameraScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("$label ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Expanded(child: Text(value, style: TextStyle(fontSize: 16, color: color ?? Colors.black))),
+          Text(
+            "$label ",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 16, color: color ?? Colors.black),
+            ),
+          ),
         ],
       ),
     );

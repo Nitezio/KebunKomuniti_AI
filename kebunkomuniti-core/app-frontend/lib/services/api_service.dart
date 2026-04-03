@@ -4,13 +4,12 @@ import 'dart:convert';
 
 class ApiService {
   // Pointing to your teammate's machine, but now hitting the NGINX Gateway (Port 80)
-  static const String gatewayIp = '10.203.82.220';
+  static const String gatewayIp = '10.0.2.2';
   static const String gatewayUrl = 'http://$gatewayIp';
 
   // THE ROUTING FIX:
   // NGINX intercepts '/api/vision/' and proxies it to the backend.
   // The backend specifically expects '/api/ai/diagnose'.
-  // Combining them gets us safely through the gateway without changing backend code!
   static const String diagnoseUrl = '$gatewayUrl/api/vision/api/ai/diagnose';
 
   // --- DAY 1: Real Network Ping Test ---

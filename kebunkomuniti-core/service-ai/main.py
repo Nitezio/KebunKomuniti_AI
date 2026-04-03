@@ -42,8 +42,15 @@ app.add_middleware(
 
 #Connect if we have real key
 supabase: Client | None = None
-if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "waiting_for_teammate":
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    if SUPABASE_URL and SUPABASE_KEY and "waiting" not in SUPABASE_URL.lower():
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Supabase connection successful!")
+    else:
+        print("ℹ️ Supabase connection skipped (using placeholders).")
+except Exception as e:
+    print(f"❌ Warning: Supabase connection failed (Invalid Key): {e}")
+    print("ℹ️ AI Service will continue running WITHOUT database saving.")
 
 @app.get("/")
 def read_root():
@@ -55,9 +62,11 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
     """
     Receives an image of a plant, sends it to Gemini, and returns a diagnosis.
     """
-    # 1. Validate the file type
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File provided is not an image.")
+    # 1. Be forgiving with the frontend's file type!
+    mime_type = file.content_type
+    if not mime_type or not mime_type.startswith("image/"):
+        print("Warning: Frontend forgot the image tag. Forcing image/jpeg...")
+        mime_type = "image/jpeg"
 
     try:
         # 2. Read the image bytes into memory
@@ -65,27 +74,30 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
         
         # 3. Format the image exactly how the Gemini API wants it
         image_part = {
-            "mime_type": file.content_type,
+            "mime_type": mime_type, # <-- USE THE NEW VARIABLE HERE!
             "data": img_bytes
         }
 
-        # 4. The Prompt Engineering (Day 2: The Armor Upgrade)
+        # 4. The Prompt Engineering (The Localized Malaysian Upgrade)
         prompt = """
         You are an expert agricultural AI assistant for the 'KebunKomuniti' Malaysian urban farming app.
+        Your primary users are gardening in Malaysia's tropical, high-humidity climate. 
+        Pay special attention to common local pests such as Aphids, Mealybugs (Koya), Whiteflies, and Spider Mites, as well as fungal issues like Powdery Mildew.
         
         CRITICAL STEP 1: Analyze the image. Does it actually contain a plant, leaf, crop, vegetable, or garden?
         If the image does NOT contain a plant (e.g., it is a person, a keyboard, a dog, a blank screen, or a coffee cup), you must safely reject it.
         
-        CRITICAL STEP 2: You MUST respond STRICTLY with a valid JSON object. Do not include any conversational text. Do not use markdown formatting like ```json.
+        CRITICAL STEP 2: You MUST respond STRICTLY with a valid JSON object. Do not include any conversational text. Do not use markdown formatting.
         
         Use exactly this structure:
         {
             "is_plant": true or false,
             "plant_name": "Common name in English/Malay (or 'N/A' if not a plant)",
             "is_healthy": true or false (must be false if not a plant),
-            "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected' if invalid image",
+            "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected'",
             "confidence": "A percentage from 0 to 100 on how sure you are",
-            "remedy_advice": "Short household remedy, or 'Please upload a clear picture of a leaf or plant.' if invalid image"
+            "diy_remedy": "A practical, zero-cost home solution (e.g., dish soap, neem oil spray). 'N/A' if invalid.",
+            "commercial_remedy": "What specific product they should buy from a Malaysian nursery. 'N/A' if invalid."
         }
         """
 
@@ -104,15 +116,15 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
         if diagnosis_data.get("is_plant") == True and supabase:
             try:
                 #Assume a table called 'diagnoses'
-                supabase.table("diagnoses").insert({
+                insert_result = supabase.table("diagnoses").insert({
                     "plant_name": diagnosis_data.get("plant_name"),
                     "is_healthy": diagnosis_data.get("is_healthy"),
                     "disease_name": diagnosis_data.get("disease_name"),
                     "remedy_advice": diagnosis_data.get("remedy_advice")
                 }).execute()
-                print("Successfully saved to Supabase!")
+                print(f"✅ Supabase Save Success! Inserted ID: {insert_result.data}")
             except Exception as e:
-                print(f"Warning: Couldn't save to database : {e}")
+                print(f"❌ SUPABASE ERROR: {e}")
 
         # 6. Return the final data to the mobile app
         return {

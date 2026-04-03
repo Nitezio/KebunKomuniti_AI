@@ -42,8 +42,15 @@ app.add_middleware(
 
 #Connect if we have real key
 supabase: Client | None = None
-if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "waiting_for_teammate":
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    if SUPABASE_URL and SUPABASE_KEY and "waiting" not in SUPABASE_URL.lower():
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Supabase connection successful!")
+    else:
+        print("ℹ️ Supabase connection skipped (using placeholders).")
+except Exception as e:
+    print(f"❌ Warning: Supabase connection failed (Invalid Key): {e}")
+    print("ℹ️ AI Service will continue running WITHOUT database saving.")
 
 @app.get("/")
 def read_root():

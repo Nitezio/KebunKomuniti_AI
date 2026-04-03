@@ -285,13 +285,19 @@ class _CameraScreenState extends State<CameraScreen> {
         children: [
           Icon(icon, size: 20, color: Colors.grey.shade400),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
-              const SizedBox(height: 2),
-              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87)),
-            ],
+          Expanded( # <--- ADDED THIS TO PREVENT OVERFLOW
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                const SizedBox(height: 2),
+                Text(
+                  value, 
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87),
+                  softWrap: true, # <--- ENABLES TEXT WRAPPING
+                ),
+              ],
+            ),
           ),
         ],
       ),

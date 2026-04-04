@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/api_service.dart';
 
 class SellScreen extends StatefulWidget {
@@ -11,10 +12,9 @@ class SellScreen extends StatefulWidget {
 }
 
 class _SellScreenState extends State<SellScreen> {
-  File? _imageFile;
+  XFile? _imageFile; // THE WEB FIX: Use XFile
   final ImagePicker _picker = ImagePicker();
   
-  // THE FIX: Single controller for the produce name
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   double _price = 0.0;
@@ -24,7 +24,7 @@ class _SellScreenState extends State<SellScreen> {
 
   void _onNameSelected(String value) {
     setState(() {
-      _nameController.text = value; // Update the main controller
+      _nameController.text = value;
       if (ApiService.regulatedPrices.containsKey(value)) {
         _basePricePerKg = ApiService.regulatedPrices[value]!;
         _calculateTotal();
@@ -56,7 +56,7 @@ class _SellScreenState extends State<SellScreen> {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
         _isAnalyzing = true;
       });
       final aiResult = await ApiService.getListingAssistant(_imageFile!);
@@ -86,7 +86,6 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   Future<void> _submitListing() async {
-    // THE FIX: Better validation check
     final String produceName = _nameController.text.trim();
     final String weightText = _weightController.text.trim();
 
@@ -124,28 +123,33 @@ class _SellScreenState extends State<SellScreen> {
               child: Container(
                 height: 180, width: double.infinity,
                 decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade300)),
-                child: _imageFile == null ? const Icon(Icons.add_photo_alternate_outlined, size: 40) : ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.file(_imageFile!, fit: BoxFit.cover)),
+                child: _imageFile == null 
+                  ? const Icon(Icons.add_photo_alternate_outlined, size: 40) 
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(20), 
+                      child: kIsWeb 
+                        ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                        : Image.file(File(_imageFile!.path), fit: BoxFit.cover)
+                    ),
               ),
             ),
             const SizedBox(height: 16),
             if (_isAnalyzing) const LinearProgressIndicator(color: Colors.green),
             const SizedBox(height: 24),
             
-            // THE FIX: Autocomplete now correctly writes to _nameController
             Autocomplete<String>(
               optionsBuilder: (TextEditingValue textEditingValue) {
                 return ApiService.regulatedPrices.keys.where((String option) => option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
               },
               onSelected: _onNameSelected,
               fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                // Pre-fill controller if name is already set by AI
                 if (_nameController.text.isNotEmpty && controller.text.isEmpty) {
                   controller.text = _nameController.text;
                 }
                 return TextField(
                   controller: controller, 
                   focusNode: focusNode, 
-                  onChanged: (val) => _nameController.text = val, // SYNC BACK
+                  onChanged: (val) => _nameController.text = val,
                   decoration: const InputDecoration(labelText: "Produce Name (e.g. Tomatoes)", border: OutlineInputBorder())
                 );
               },

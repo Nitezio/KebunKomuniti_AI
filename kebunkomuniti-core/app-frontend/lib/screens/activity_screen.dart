@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/api_service.dart';
 
 class ActivityScreen extends StatefulWidget {
@@ -56,12 +57,18 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
               const Text("Transaction Receipt", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const Divider(height: 32),
               
+              // THE WEB FIX: Don't use File() on browser
               if (order['surplus']['image_path'] != null)
-                ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(order['surplus']['image_path']), height: 100, width: 100, fit: BoxFit.cover)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12), 
+                  child: kIsWeb 
+                    ? Image.network(order['surplus']['image_path'], height: 100, width: 100, fit: BoxFit.cover)
+                    : Image.file(File(order['surplus']['image_path']), height: 100, width: 100, fit: BoxFit.cover)
+                ),
               
               const SizedBox(height: 16),
               _buildReceiptRow("Status", order['status']),
-              _buildReceiptRow("Date", date), // THE FIX: Now using the date variable
+              _buildReceiptRow("Date", date),
               _buildReceiptRow("Type", isBuying ? "Buying" : "Selling"),
               _buildReceiptRow("Item", order['surplus']['item_name']),
               _buildReceiptRow("Weight", "${order['surplus']['quantity_kg']} kg"),
@@ -122,7 +129,6 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final order = filtered[index];
-        // THE FIX: If I am the seller, always show "Selling" (Green) for the demo
         final bool isActuallySelling = order['seller_name'] == _userName;
         final bool isBuying = !isActuallySelling;
 
@@ -138,7 +144,7 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("RM ${order['surplus']['price'].toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text("RM ${(order['surplus']['price'] ?? 0.0).toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold)),
                   Text(filterStatus, style: TextStyle(fontSize: 10, color: filterStatus == "Pending" ? Colors.orange : Colors.green)),
                 ],
               ),

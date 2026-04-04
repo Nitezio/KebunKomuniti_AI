@@ -38,6 +38,13 @@ class ApiService {
 
   static List<Map<String, dynamic>> localSurplus = [
     {"id": 201, "item_name": "Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "price_per_kg": 5.50, "method": "Pickup", "seller_name": "Neighbor Siti"},
+    {"id": 202, "item_name": "Spinach (Bayam)", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 11.25, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Ali"},
+    {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300, "price": 19.20, "price_per_kg": 16.00, "method": "Pickup", "seller_name": "Neighbor Chong"},
+    {"id": 204, "item_name": "Okra (Bendi)", "quantity_kg": 3.0, "latitude": 3.8180, "longitude": 103.3220, "price": 21.00, "price_per_kg": 7.00, "method": "Pickup", "seller_name": "Neighbor Kumar"},
+    {"id": 205, "item_name": "Papaya", "quantity_kg": 10.0, "latitude": 3.8050, "longitude": 103.3350, "price": 45.00, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Tan"},
+    {"id": 206, "item_name": "Mango", "quantity_kg": 4.5, "latitude": 3.8250, "longitude": 103.3150, "price": 67.50, "price_per_kg": 15.00, "method": "Pickup", "seller_name": "Neighbor Lee"},
+    {"id": 207, "item_name": "Eggplant (Terung)", "quantity_kg": 1.5, "latitude": 3.8080, "longitude": 103.3250, "price": 9.75, "price_per_kg": 6.50, "method": "Pickup", "seller_name": "Neighbor Zainab"},
+    {"id": 208, "item_name": "Mustard Green (Sawi)", "quantity_kg": 2.0, "latitude": 3.8120, "longitude": 103.3100, "price": 10.00, "price_per_kg": 5.00, "method": "Delivery", "seller_name": "Neighbor Rosli"},
   ];
   static List<Map<String, dynamic>> localOrders = [];
 

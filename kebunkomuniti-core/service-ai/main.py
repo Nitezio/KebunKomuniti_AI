@@ -3,36 +3,26 @@ from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
-import json #to read JSON from gemini 
+import json
+import re
 from supabase import create_client, Client
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-# Load the API key from the .env file
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Configure the Gemini API
-genai.configure(api_key=API_KEY)
-#Setup Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-if not API_KEY:
-    raise ValueError("No GEMINI_API_KEY found in environment variables!")
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 app = FastAPI(title="KebunKomuniti AI Service")
-
-#Rate Limiter Setup
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# We use Gemini 2.5 Flash because it is incredibly fast and multimodal (takes images + text)
-model = genai.GenerativeModel('gemini-2.5-flash')
-
-# Allow the frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,134 +30,84 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#Connect if we have real key
 supabase: Client | None = None
 try:
     if SUPABASE_URL and SUPABASE_KEY and "waiting" not in SUPABASE_URL.lower():
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("✅ Supabase connection successful!")
-    else:
-        print("ℹ️ Supabase connection skipped (using placeholders).")
+        print("✅ Supabase connected!")
 except Exception as e:
-    print(f"❌ Warning: Supabase connection failed (Invalid Key): {e}")
-    print("ℹ️ AI Service will continue running WITHOUT database saving.")
+    print(f"❌ Supabase Error: {e}")
+
+# --- ROBUST JSON CLEANER ---
+def clean_json_response(text: String):
+    """Removes markdown backticks and extra spaces so JSON parsing never fails."""
+    # Use regex to find everything between { and }
+    match = re.search(r'(\{.*\})', text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text.replace("```json", "").replace("```", "").strip()
 
 @app.get("/")
 def read_root():
-    return {"status": "AI Microservice is running securely!"}
-
-# --- Marketplace Assistant Prompt ---
-ASSISTANT_PROMPT = """
-You are the KebunKomuniti Marketplace Assistant. 
-Analyze the image of the garden produce and provide a JSON response.
-1. Identify the item name.
-2. Estimate the weight in kilograms based on the quantity shown.
-3. Suggest a fair local community price in RM (Ringgit Malaysia).
-
-Return ONLY this JSON format:
-{
-  "item_name": "string",
-  "estimated_weight_kg": float,
-  "suggested_price_rm": float,
-  "confidence": "string"
-}
-"""
-
-@app.post("/api/ai/assistant")
-@limiter.limit("5/minute")
-async def marketplace_assistant(request: Request, file: UploadFile = File(...)):
-    mime_type = file.content_type or "image/jpeg"
-    img_bytes = await file.read()
-    
-    try:
-        response = model.generate_content([
-            ASSISTANT_PROMPT,
-            {"mime_type": mime_type, "data": img_bytes}
-        ])
-        
-        # Clean and parse JSON
-        clean_text = response.text.replace("```json\n", "").replace("```", "").strip()
-        return {"success": True, "data": json.loads(clean_text)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "AI Service Active"}
 
 @app.post("/api/ai/diagnose")
-@limiter.limit("5/minute") # Only allow 5 requests per minute per IP
-async def diagnose_plant(request: Request , file: UploadFile = File(...)):
-    """
-    Receives an image of a plant, sends it to Gemini, and returns a diagnosis.
-    """
-    # 1. Be forgiving with the frontend's file type!
-    mime_type = file.content_type
-    if not mime_type or not mime_type.startswith("image/"):
-        print("Warning: Frontend forgot the image tag. Forcing image/jpeg...")
-        mime_type = "image/jpeg"
-
+@limiter.limit("10/minute")
+async def diagnose_plant(request: Request, file: UploadFile = File(...)):
+    mime_type = file.content_type or "image/jpeg"
     try:
-        # 2. Read the image bytes into memory
         img_bytes = await file.read()
         
-        # 3. Format the image exactly how the Gemini API wants it
-        image_part = {
-            "mime_type": mime_type, # <-- USE THE NEW VARIABLE HERE!
-            "data": img_bytes
-        }
-
-        # 4. The Prompt Engineering (The Localized Malaysian Upgrade)
         prompt = """
         You are an expert agricultural AI assistant for the 'KebunKomuniti' Malaysian urban farming app.
-        Your primary users are gardening in Malaysia's tropical, high-humidity climate. 
-        Pay special attention to common local pests such as Aphids, Mealybugs (Koya), Whiteflies, and Spider Mites, as well as fungal issues like Powdery Mildew.
-        
-        CRITICAL STEP 1: Analyze the image. Does it actually contain a plant, leaf, crop, vegetable, or garden?
-        If the image does NOT contain a plant (e.g., it is a person, a keyboard, a dog, a blank screen, or a coffee cup), you must safely reject it.
-        
-        CRITICAL STEP 2: You MUST respond STRICTLY with a valid JSON object. Do not include any conversational text. Do not use markdown formatting.
-        
-        Use exactly this structure:
+        Respond STRICTLY with this JSON structure:
         {
-            "is_plant": true or false,
-            "plant_name": "Common name in English/Malay (or 'N/A' if not a plant)",
-            "is_healthy": true or false (must be false if not a plant),
-            "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected'",
-            "confidence": "A percentage from 0 to 100 followed by the '%' sign (e.g., '95%')",
-            "diy_remedy": "A practical, zero-cost home solution (e.g., dish soap, neem oil spray). 'N/A' if invalid.",
-            "commercial_remedy": "What specific product they should buy from a Malaysian nursery. 'N/A' if invalid."
+            "is_plant": true/false,
+            "plant_name": "string",
+            "is_healthy": true/false,
+            "disease_name": "string",
+            "confidence": "string with %",
+            "diy_remedy": "string",
+            "commercial_remedy": "string"
         }
         """
 
-        # 5. Send both the prompt and the image to Gemini
-        response = model.generate_content([prompt, image_part])
-
-        #Turn gemini text into a real python dictionary
-        try:
-            #clear text in case gemini accidentally added markdown formatting
-            clean_text = response.text.replace("```json\n", "").replace("```", "").strip()
-            diagnosis_data = json.loads(clean_text)
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=500, detail="AI didn't return valid JSON.")
+        response = model.generate_content([prompt, {"mime_type": mime_type, "data": img_bytes}])
         
-        #Save to database (If its a plant AND we have keys)
-        if diagnosis_data.get("is_plant") == True and supabase:
+        # 1. Clean and Parse
+        raw_text = response.text
+        print(f"🤖 RAW AI RESPONSE: {raw_text}") # See this in Docker logs!
+        
+        clean_text = clean_json_response(raw_text)
+        diagnosis_data = json.loads(clean_text)
+
+        # 2. Save to Supabase (Safe Mode)
+        if diagnosis_data.get("is_plant") and supabase:
             try:
-                #Assume a table called 'diagnoses'
-                insert_result = supabase.table("diagnoses").insert({
+                supabase.table("diagnoses").insert({
                     "plant_name": diagnosis_data.get("plant_name"),
                     "is_healthy": diagnosis_data.get("is_healthy"),
                     "disease_name": diagnosis_data.get("disease_name"),
-                    "remedy_advice": diagnosis_data.get("remedy_advice")
+                    "diy_remedy": diagnosis_data.get("diy_remedy"),
+                    "commercial_remedy": diagnosis_data.get("commercial_remedy")
                 }).execute()
-                print(f"✅ Supabase Save Success! Inserted ID: {insert_result.data}")
             except Exception as e:
-                print(f"❌ SUPABASE ERROR: {e}")
+                print(f"⚠️ DB Save Ignored: {e}")
 
-        # 6. Return the final data to the mobile app
-        return {
-            "success": True,
-            "filename": file.filename,
-            "diagnosis": diagnosis_data
-        }
+        return {"success": True, "diagnosis": diagnosis_data}
 
     except Exception as e:
+        print(f"💥 CRITICAL ERROR: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/ai/assistant")
+async def marketplace_assistant(request: Request, file: UploadFile = File(...)):
+    mime_type = file.content_type or "image/jpeg"
+    try:
+        img_bytes = await file.read()
+        prompt = "Analyze produce. Return JSON: item_name, estimated_weight_kg, suggested_price_rm, confidence."
+        response = model.generate_content([prompt, {"mime_type": mime_type, "data": img_bytes}])
+        clean_text = clean_json_response(response.text)
+        return {"success": True, "data": json.loads(clean_text)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

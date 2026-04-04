@@ -130,7 +130,7 @@ async def diagnose_plant(request: Request , file: UploadFile = File(...)):
             "plant_name": "Common name in English/Malay (or 'N/A' if not a plant)",
             "is_healthy": true or false (must be false if not a plant),
             "disease_name": "Name of the issue, 'None' if healthy, or 'Not a plant detected'",
-            "confidence": "A percentage from 0 to 100 on how sure you are",
+            "confidence": "A percentage from 0 to 100 followed by the '%' sign (e.g., '95%')",
             "diy_remedy": "A practical, zero-cost home solution (e.g., dish soap, neem oil spray). 'N/A' if invalid.",
             "commercial_remedy": "What specific product they should buy from a Malaysian nursery. 'N/A' if invalid."
         }

@@ -3,87 +3,110 @@ import 'dart:io';
 import 'dart:convert';
 
 class ApiService {
-  // Use 10.0.2.2 for Android Emulator, or your real Laptop IP for physical phones.
   static const String gatewayIp = '10.0.2.2';
   static const String gatewayUrl = 'http://$gatewayIp';
 
-  // Endpoints routed via NGINX Gateway
+  // AI Routes
   static const String diagnoseUrl = '$gatewayUrl/api/vision/api/ai/diagnose';
+  static const String assistantUrl = '$gatewayUrl/api/vision/api/ai/assistant';
+
+  // Data Routes
   static const String surplusUrl = '$gatewayUrl/api/data/api/data/surplus';
   static const String addSurplusUrl = '$gatewayUrl/api/data/api/data/add';
+  static const String orderUrl = '$gatewayUrl/api/data/api/data/order';
+  static const String historyUrl = '$gatewayUrl/api/data/api/data/history';
 
-  // --- Connection Test ---
-  static Future<String> pingBackend() async {
+  // --- AI Assistant (The Seller's Helper) ---
+  static Future<Map<String, dynamic>?> getListingAssistant(File imageFile) async {
     try {
-      final response = await http.get(Uri.parse('$gatewayUrl/health')).timeout(const Duration(seconds: 5));
+      var request = http.MultipartRequest('POST', Uri.parse(assistantUrl));
+      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      var response = await request.send();
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        return "Success: ${data['status']}";
+        String responseData = await response.stream.bytesToString();
+        return jsonDecode(responseData)['data'];
       }
-      return "Error: Gateway responded with ${response.statusCode}";
+      return null;
     } catch (e) {
-      return "Connection failed. Is Docker running? Error: $e";
+      print("Assistant Error: $e");
+      return null;
     }
   }
 
-  // --- AI Diagnosis ---
+  // --- Marketplace Order ---
+  static Future<bool> placeOrder(int id, String name, String method) async {
+    try {
+      final response = await http.post(
+        Uri.parse(orderUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"listing_id": id, "buyer_name": name, "delivery_method": method}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- Order History ---
+  static Future<List<dynamic>> getHistory(String name) async {
+    try {
+      final response = await http.get(Uri.parse('$historyUrl/$name'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['orders'];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // --- Existing Logic ---
+  static Future<String> pingBackend() async {
+    try {
+      final response = await http.get(Uri.parse('$gatewayUrl/health')).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200 ? "Success" : "Offline";
+    } catch (e) {
+      return "Error";
+    }
+  }
+
   static Future<Map<String, dynamic>?> analyzePlant(File imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(diagnoseUrl));
       request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
       var response = await request.send();
-
       if (response.statusCode == 200) {
         String responseData = await response.stream.bytesToString();
         return jsonDecode(responseData);
       }
       return null;
     } catch (e) {
-      print("AI Error: $e");
       return null;
     }
   }
 
-  // --- Neighborhood Aggregator (The Marketplace) ---
   static Future<List<dynamic>> getNeighborhoodSurplus(double lat, double lon) async {
     try {
       final response = await http.post(
         Uri.parse(surplusUrl),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "latitude": lat,
-          "longitude": lon,
-          "radius_km": 5.0
-        }),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        return data['clusters'] ?? [];
-      }
-      return [];
+        body: jsonEncode({"latitude": lat, "longitude": lon, "radius_km": 5.0}),
+      );
+      return response.statusCode == 200 ? jsonDecode(response.body)['clusters'] : [];
     } catch (e) {
-      print("Marketplace Error: $e");
       return [];
     }
   }
 
-  // --- List New Surplus ---
   static Future<bool> listSurplus(String name, double kg, double lat, double lon) async {
     try {
       final response = await http.post(
         Uri.parse(addSurplusUrl),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "item_name": name,
-          "quantity_kg": kg,
-          "latitude": lat,
-          "longitude": lon
-        }),
+        body: jsonEncode({"item_name": name, "quantity_kg": kg, "latitude": lat, "longitude": lon}),
       );
       return response.statusCode == 200;
     } catch (e) {
-      print("Listing Error: $e");
       return false;
     }
   }

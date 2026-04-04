@@ -56,6 +56,41 @@ except Exception as e:
 def read_root():
     return {"status": "AI Microservice is running securely!"}
 
+# --- Marketplace Assistant Prompt ---
+ASSISTANT_PROMPT = """
+You are the KebunKomuniti Marketplace Assistant. 
+Analyze the image of the garden produce and provide a JSON response.
+1. Identify the item name.
+2. Estimate the weight in kilograms based on the quantity shown.
+3. Suggest a fair local community price in RM (Ringgit Malaysia).
+
+Return ONLY this JSON format:
+{
+  "item_name": "string",
+  "estimated_weight_kg": float,
+  "suggested_price_rm": float,
+  "confidence": "string"
+}
+"""
+
+@app.post("/api/ai/assistant")
+@limiter.limit("5/minute")
+async def marketplace_assistant(request: Request, file: UploadFile = File(...)):
+    mime_type = file.content_type or "image/jpeg"
+    img_bytes = await file.read()
+    
+    try:
+        response = model.generate_content([
+            ASSISTANT_PROMPT,
+            {"mime_type": mime_type, "data": img_bytes}
+        ])
+        
+        # Clean and parse JSON
+        clean_text = response.text.replace("```json\n", "").replace("```", "").strip()
+        return {"success": True, "data": json.loads(clean_text)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/ai/diagnose")
 @limiter.limit("5/minute") # Only allow 5 requests per minute per IP
 async def diagnose_plant(request: Request , file: UploadFile = File(...)):

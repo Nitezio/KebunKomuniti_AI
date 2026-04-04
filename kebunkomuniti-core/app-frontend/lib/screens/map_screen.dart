@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/api_service.dart';
+import 'sell_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -12,13 +13,51 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final LatLng _userLocation = const LatLng(3.8126, 103.3256); // Kuantan Center
-  List<Marker> _markers = [];
+  List<dynamic> _allClusters = []; // Store raw data for filtering
+  List<Marker> _visibleMarkers = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchMarketplaceData();
+  }
+
+  // --- Filter Logic ---
+  void _filterMarkers(String query) {
+    List<Marker> filtered = [];
+    
+    // Always keep user location
+    filtered.add(Marker(point: _userLocation, width: 60, height: 60, child: const Icon(Icons.my_location, color: Colors.blue, size: 30)));
+
+    for (var cluster in _allClusters) {
+      if (cluster['item_name'].toString().toLowerCase().contains(query.toLowerCase())) {
+        filtered.add(
+          Marker(
+            point: LatLng(cluster['latitude'], cluster['longitude']),
+            width: 150, height: 80,
+            child: GestureDetector(
+              onTap: () => _showProduceDetails(cluster),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.green.shade700, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+                    child: Text("${cluster['quantity_kg']}kg ${cluster['item_name']}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                  ),
+                  const Icon(Icons.arrow_drop_down, color: Colors.green, size: 30),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    setState(() {
+      _visibleMarkers = filtered;
+    });
   }
 
   void _showProduceDetails(Map<String, dynamic> cluster) {
@@ -107,11 +146,8 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _fetchMarketplaceData() async {
     setState(() => _isLoading = true);
-    
-    // Attempt to fetch real data
     var clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
 
-    // INJECT DEMO DATA IF DATABASE IS EMPTY
     if (clusters.isEmpty) {
       clusters = [
         {"item_name": "Organic Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280},
@@ -120,48 +156,37 @@ class _MapScreenState extends State<MapScreen> {
       ];
     }
 
-    List<Marker> newMarkers = [];
-    newMarkers.add(Marker(point: _userLocation, width: 60, height: 60, child: const Icon(Icons.my_location, color: Colors.blue, size: 30)));
-
-    for (var cluster in clusters) {
-      newMarkers.add(
-        Marker(
-          point: LatLng(cluster['latitude'], cluster['longitude']),
-          width: 150, height: 80,
-          child: GestureDetector(
-            onTap: () => _showProduceDetails(cluster),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.green.shade700, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
-                  child: Text("${cluster['quantity_kg']}kg ${cluster['item_name']}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-                ),
-                const Icon(Icons.arrow_drop_down, color: Colors.green, size: 30),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     setState(() {
-      _markers = newMarkers;
+      _allClusters = clusters;
       _isLoading = false;
     });
+    
+    _filterMarkers(_searchController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Community Marketplace'),
-        backgroundColor: Colors.white.withOpacity(0.9),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchMarketplaceData)],
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: TextField(
+          controller: _searchController,
+          onChanged: _filterMarkers,
+          decoration: InputDecoration(
+            hintText: "Search produce (e.g. Chili)",
+            prefixIcon: const Icon(Icons.search, color: Colors.green),
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          ),
+        ),
+        actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.green), onPressed: _fetchMarketplaceData)],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Redirecting to Sell Surplus flow...")));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen()));
         },
         label: const Text("Sell Surplus"),
         icon: const Icon(Icons.add_a_photo),
@@ -174,7 +199,7 @@ class _MapScreenState extends State<MapScreen> {
             options: MapOptions(initialCenter: _userLocation, initialZoom: 13.0),
             children: [
               TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.kebun_komuniti'),
-              MarkerLayer(markers: _markers),
+              MarkerLayer(markers: _visibleMarkers),
             ],
           ),
           if (_isLoading) const Center(child: CircularProgressIndicator(color: Colors.green)),

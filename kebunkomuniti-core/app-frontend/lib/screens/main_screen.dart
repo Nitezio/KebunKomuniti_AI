@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'map_screen.dart';
 import 'camera_screen.dart';
 import 'home_screen.dart';
+import 'activity_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,6 +17,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const MapScreen(),
     const CameraScreen(),
+    const ActivityScreen(), // NEW: Activity tab
     const HomeScreen(),
   ];
 
@@ -32,22 +34,26 @@ class _MainScreenState extends State<MainScreen> {
         duration: const Duration(milliseconds: 300),
         child: _pages[_selectedIndex],
       ),
-      // Upgraded to the trendy Material 3 NavigationBar
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
         backgroundColor: Colors.white,
-        indicatorColor: Colors.green.shade100, // Soft sage indicator
+        indicatorColor: Colors.green.shade100,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.map_outlined),
             selectedIcon: Icon(Icons.map, color: Colors.green),
-            label: 'Surplus Map',
+            label: 'Market',
           ),
           NavigationDestination(
             icon: Icon(Icons.document_scanner_outlined),
             selectedIcon: Icon(Icons.document_scanner, color: Colors.green),
             label: 'AI Doctor',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long, color: Colors.green),
+            label: 'Activity',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),

@@ -82,10 +82,13 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _approve(order['id'], isBuying),
-                    icon: const Icon(Icons.handshake),
-                    label: Text(isBuying ? "Confirm Pickup" : "Confirm Delivery"),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+                    onPressed: order['buyer_name'] == "Awaiting Buyer" ? null : () => _approve(order['id'], isBuying),
+                    icon: Icon(order['buyer_name'] == "Awaiting Buyer" ? Icons.hourglass_empty : Icons.handshake),
+                    label: Text(order['buyer_name'] == "Awaiting Buyer" ? "Awaiting Buyer..." : (isBuying ? "Confirm Pickup" : "Confirm Delivery")),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: order['buyer_name'] == "Awaiting Buyer" ? Colors.grey : Colors.green.shade700, 
+                      foregroundColor: Colors.white
+                    ),
                   ),
                 ),
               

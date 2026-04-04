@@ -7,7 +7,6 @@ class ApiService {
   static const String gatewayIp = '10.0.2.2';
   static const String gatewayUrl = 'http://$gatewayIp';
 
-  // --- Price Regulation Data ---
   static const Map<String, double> regulatedPrices = {
     "Tomatoes": 5.50,
     "Chili Padi": 16.00,
@@ -17,7 +16,6 @@ class ApiService {
     "Eggplant (Terung)": 6.50,
   };
 
-  // --- LOCAL DEMO STORAGE ---
   static List<Map<String, dynamic>> localSurplus = [
     {
       "id": 101, 
@@ -34,17 +32,19 @@ class ApiService {
   
   static List<Map<String, dynamic>> localOrders = [];
 
-  // --- THE ONE-SIDED INSTANT HANDSHAKE FIX ---
+  // --- Mutual Approval Logic ---
   static Future<void> approveTransaction(int orderId, bool isBuyer) async {
     final index = localOrders.indexWhere((o) => o['id'] == orderId);
     if (index != -1) {
-      // THE DEMO FIX: One click from the user is enough to finish the flow
-      localOrders[index]['status'] = "Completed";
-      localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
+      // THE FIX: Cannot verify handshake if no one has bought it yet!
+      if (localOrders[index]['buyer_name'] == "Awaiting Buyer") return;
+
       localOrders[index]['buyer_approved'] = true;
       localOrders[index]['seller_approved'] = true;
+      localOrders[index]['status'] = "Completed";
+      localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
       
-      // --- THE MAP FIX: Remove the item from the map immediately ---
+      // Remove from map once completed
       int listingId = localOrders[index]['surplus']['id'];
       localSurplus.removeWhere((item) => item['id'] == listingId);
     }
@@ -66,11 +66,16 @@ class ApiService {
   }
 
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    // Prevent duplicate orders for same item
-    if (localOrders.any((o) => o['surplus']['id'] == cluster['id'] && o['status'] == "Pending")) {
-      return true; 
+    // THE FIX: Try to find the existing listing in our activity and "claim" it
+    final existingIndex = localOrders.indexWhere((o) => o['surplus']['id'] == cluster['id']);
+    
+    if (existingIndex != -1) {
+      localOrders[existingIndex]['buyer_name'] = buyerName;
+      localOrders[existingIndex]['delivery_method'] = method;
+      return true;
     }
 
+    // If it was a demo marker not in our list, add it as a new order
     localOrders.add({
       "id": DateTime.now().millisecondsSinceEpoch,
       "buyer_name": buyerName,
@@ -107,7 +112,7 @@ class ApiService {
     
     localOrders.add({
       "id": newItem['id'],
-      "buyer_name": "Awaiting Buyer",
+      "buyer_name": "Awaiting Buyer", // THE FIX: Stays pending until someone orders
       "seller_name": "Ahmad bin Razak",
       "status": "Pending",
       "buyer_approved": false,

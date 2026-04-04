@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.29+-blue.svg)](https://flutter.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)](https://www.docker.com/)
+[![Ngrok](https://img.shields.io/badge/Ngrok-Enabled-blue.svg)](https://ngrok.com/)
 [![SDG 2](https://img.shields.io/badge/SDG-2-green.svg)](https://sdgs.un.org/goals/goal2)
 [![SDG 9](https://img.shields.io/badge/SDG-9-orange.svg)](https://sdgs.un.org/goals/goal9)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()

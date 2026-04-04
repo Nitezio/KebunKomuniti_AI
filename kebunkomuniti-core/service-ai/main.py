@@ -54,7 +54,9 @@ def read_root():
 @app.post("/api/ai/diagnose")
 @limiter.limit("10/minute")
 async def diagnose_plant(request: Request, file: UploadFile = File(...)):
-    mime_type = file.content_type or "image/jpeg"
+    mime_type = file.content_type
+    if not mime_type or "image" not in mime_type:
+        mime_type = "image/jpeg" # Force image type for Gemini
     try:
         img_bytes = await file.read()
         
@@ -102,7 +104,9 @@ async def diagnose_plant(request: Request, file: UploadFile = File(...)):
 
 @app.post("/api/ai/assistant")
 async def marketplace_assistant(request: Request, file: UploadFile = File(...)):
-    mime_type = file.content_type or "image/jpeg"
+    mime_type = file.content_type
+    if not mime_type or "image" not in mime_type:
+        mime_type = "image/jpeg" # Force image type for Gemini
     try:
         img_bytes = await file.read()
         prompt = "Analyze produce. Return JSON: item_name, estimated_weight_kg, suggested_price_rm, confidence."

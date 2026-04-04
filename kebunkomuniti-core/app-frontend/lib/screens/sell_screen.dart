@@ -15,9 +15,39 @@ class _SellScreenState extends State<SellScreen> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
+  double _price = 0.0;
+  double _basePricePerKg = 0.0;
+  String _method = "Pickup";
   bool _isAnalyzing = false;
-  bool _isUploading = false;
+
+  void _onNameChanged(String value) {
+    if (ApiService.regulatedPrices.containsKey(value)) {
+      setState(() {
+        _basePricePerKg = ApiService.regulatedPrices[value]!;
+        _calculateTotal();
+      });
+    }
+  }
+
+  void _calculateTotal() {
+    double weight = double.tryParse(_weightController.text) ?? 0.0;
+    setState(() {
+      _price = _basePricePerKg * weight;
+    });
+  }
+
+  void _adjustPrice(double delta) {
+    double weight = double.tryParse(_weightController.text) ?? 0.0;
+    double originalTotal = _basePricePerKg * weight;
+    double maxTotal = originalTotal * 1.20; 
+    
+    double newPrice = _price + delta;
+    if (newPrice >= 0 && newPrice <= maxTotal) {
+      setState(() => _price = newPrice);
+    } else if (newPrice > maxTotal) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Price exceeds regulation limit!")));
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
@@ -26,14 +56,11 @@ class _SellScreenState extends State<SellScreen> {
         _imageFile = File(pickedFile.path);
         _isAnalyzing = true;
       });
-
       final aiResult = await ApiService.getListingAssistant(_imageFile!);
       if (aiResult != null) {
-        setState(() {
-          _nameController.text = aiResult['item_name'] ?? "";
-          _weightController.text = aiResult['estimated_weight_kg']?.toString() ?? "";
-          _priceController.text = aiResult['suggested_price_rm']?.toString() ?? "";
-        });
+        _nameController.text = aiResult['item_name'] ?? "";
+        _weightController.text = aiResult['estimated_weight_kg']?.toString() ?? "";
+        _onNameChanged(_nameController.text);
       }
       setState(() => _isAnalyzing = false);
     }
@@ -54,80 +81,96 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   Future<void> _submitListing() async {
-    if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter produce name")));
+    if (_nameController.text.isEmpty || _weightController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all details")));
       return;
     }
     
-    setState(() => _isUploading = true);
-    
-    // THE FIX: Send to our new local backup engine
+    // THE FIX: Provide all 7 required arguments to match ApiService
     bool success = await ApiService.listSurplus(
       _nameController.text, 
       double.tryParse(_weightController.text) ?? 0.0, 
       3.8126, 103.3256,
-      double.tryParse(_priceController.text) ?? 0.0,
+      _price, 
+      _method, 
+      _imageFile?.path
     );
 
-    setState(() => _isUploading = false);
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Produce listed for sale! Check Activity tab.")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Produce listed for sale!")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Listing", style: TextStyle(fontWeight: FontWeight.bold)), centerTitle: true),
+      appBar: AppBar(title: const Text("Sell Surplus")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Produce Photo", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 12),
             GestureDetector(
               onTap: _showPickerOptions,
               child: Container(
-                height: 220, width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100, 
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey.shade300, width: 2, style: BorderStyle.solid)
-                ),
-                child: _imageFile == null 
-                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.green.shade700), const SizedBox(height: 8), const Text("Add photo (Optional)")])
-                  : ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.file(_imageFile!, fit: BoxFit.cover)),
+                height: 180, width: double.infinity,
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade300)),
+                child: _imageFile == null ? const Icon(Icons.add_photo_alternate_outlined, size: 40) : ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.file(_imageFile!, fit: BoxFit.cover)),
               ),
             ),
+            const SizedBox(height: 16),
+            if (_isAnalyzing) const LinearProgressIndicator(color: Colors.green),
             const SizedBox(height: 24),
-            if (_isAnalyzing) const Column(children: [LinearProgressIndicator(color: Colors.green), SizedBox(height: 8), Text("AI is estimating weight...", style: TextStyle(fontSize: 12, color: Colors.grey))]),
             
-            const Text("Listing Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                return ApiService.regulatedPrices.keys.where((String option) => option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+              },
+              onSelected: _onNameChanged,
+              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                return TextField(controller: controller, focusNode: focusNode, decoration: const InputDecoration(labelText: "Produce Name", border: OutlineInputBorder()));
+              },
+            ),
+            
             const SizedBox(height: 16),
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: "Produce Name (e.g. Chili)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-            const SizedBox(height: 16),
+            TextField(controller: _weightController, keyboardType: TextInputType.number, onChanged: (_) => _calculateTotal(), decoration: const InputDecoration(labelText: "Weight (kg)", border: OutlineInputBorder())),
+            
+            const SizedBox(height: 24),
+            const Text("Method of Selling", style: TextStyle(fontWeight: FontWeight.bold)),
             Row(
               children: [
-                Expanded(child: TextField(controller: _weightController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: "Weight (kg)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
-                const SizedBox(width: 16),
-                Expanded(child: TextField(controller: _priceController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: "Total Price (RM)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+                ChoiceChip(label: const Text("Pickup"), selected: _method == "Pickup", onSelected: (_) => setState(() => _method = "Pickup")),
+                const SizedBox(width: 12),
+                ChoiceChip(label: const Text("Delivery"), selected: _method == "Delivery", onSelected: (_) => setState(() => _method = "Delivery")),
               ],
             ),
-            const SizedBox(height: 40),
+
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20)),
+              child: Column(
+                children: [
+                  const Text("Calculated Total Price", style: TextStyle(fontSize: 12)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _adjustPrice(-0.5)),
+                      Text("RM ${_price.toStringAsFixed(2)}", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green)),
+                      IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _adjustPrice(0.5)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isUploading ? null : _submitListing,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700, 
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
-                ),
-                child: _isUploading 
-                  ? const CircularProgressIndicator(color: Colors.white) 
-                  : const Text("SELL", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                onPressed: _submitListing,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.all(18)),
+                child: const Text("SELL NOW", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           ],

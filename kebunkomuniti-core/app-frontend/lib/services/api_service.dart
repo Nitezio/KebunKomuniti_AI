@@ -28,30 +28,31 @@ class ApiService {
       "price": 27.50,
       "price_per_kg": 5.50,
       "method": "Pickup",
-      "image_path": null,
       "seller_name": "Neighbor Siti"
     },
   ];
   
   static List<Map<String, dynamic>> localOrders = [];
 
-  // --- Mutual Approval Logic ---
+  // --- THE MASTER HANDSHAKE FIX ---
   static Future<void> approveTransaction(int orderId, bool isBuyer) async {
     final index = localOrders.indexWhere((o) => o['id'] == orderId);
     if (index != -1) {
+      // 1. Mark the approval
       if (isBuyer) localOrders[index]['buyer_approved'] = true;
       else localOrders[index]['seller_approved'] = true;
 
-      // THE DEMO FIX:
-      // If it's your own listing (Awaiting Buyer) or a self-purchase, one click finishes it!
-      bool isSelfTransaction = localOrders[index]['buyer_name'] == "Awaiting Buyer" || 
-                               localOrders[index]['buyer_name'] == localOrders[index]['seller_name'];
-
-      if (isSelfTransaction || (localOrders[index]['buyer_approved'] == true && localOrders[index]['seller_approved'] == true)) {
+      // 2. Logic: For the demo, one click finishes your own items. 
+      // For neighbors, it requires both (Realism).
+      bool isSelfBuy = localOrders[index]['buyer_name'] == localOrders[index]['seller_name'];
+      
+      if (isSelfBuy || (localOrders[index]['buyer_approved'] == true && localOrders[index]['seller_approved'] == true)) {
         localOrders[index]['status'] = "Completed";
         localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
-        localOrders[index]['buyer_approved'] = true;
-        localOrders[index]['seller_approved'] = true;
+        
+        // --- THE MAP FIX: Remove the item from the map once sold/bought ---
+        int listingId = localOrders[index]['surplus']['id'];
+        localSurplus.removeWhere((item) => item['id'] == listingId);
       }
     }
   }
@@ -72,18 +73,20 @@ class ApiService {
   }
 
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    bool isSelfBuy = cluster['seller_name'] == buyerName;
-    
+    // Prevent duplicate orders for the same item in the demo
+    if (localOrders.any((o) => o['surplus']['id'] == cluster['id'] && o['status'] == "Pending")) {
+      return true; 
+    }
+
     localOrders.add({
       "id": DateTime.now().millisecondsSinceEpoch,
       "buyer_name": buyerName,
       "seller_name": cluster['seller_name'] ?? "Neighbor",
-      "status": isSelfBuy ? "Completed" : "Pending", 
-      "buyer_approved": isSelfBuy,
-      "seller_approved": isSelfBuy,
+      "status": "Pending", 
+      "buyer_approved": false,
+      "seller_approved": false,
       "delivery_method": method,
       "created_at": DateTime.now().toIso8601String(),
-      "completed_at": isSelfBuy ? DateTime.now().toIso8601String() : null,
       "surplus": {
         ...cluster,
         "price": cluster['price'] ?? 0.0,
@@ -107,7 +110,7 @@ class ApiService {
       "seller_name": "Ahmad bin Razak"
     };
     
-    localSurplus.add(newItem); // THE FIX: Ensure it goes to map list
+    localSurplus.add(newItem);
     
     localOrders.add({
       "id": newItem['id'],

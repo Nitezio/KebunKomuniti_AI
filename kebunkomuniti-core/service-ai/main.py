@@ -39,7 +39,7 @@ except Exception as e:
     print(f"❌ Supabase Error: {e}")
 
 # --- ROBUST JSON CLEANER ---
-def clean_json_response(text: String):
+def clean_json_response(text: str):
     """Removes markdown backticks and extra spaces so JSON parsing never fails."""
     # Use regex to find everything between { and }
     match = re.search(r'(\{.*\})', text, re.DOTALL)

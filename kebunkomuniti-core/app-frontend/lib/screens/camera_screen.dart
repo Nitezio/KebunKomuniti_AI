@@ -56,13 +56,10 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF8), // Very soft green-tinted white
+      backgroundColor: const Color(0xFFF7FAF8),
       appBar: AppBar(
         elevation: 0,
-        title: const Text(
-          'Plant Diagnostics',
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
-        ),
+        title: const Text('AI Plant Doctor', style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.transparent,
         centerTitle: true,
       ),
@@ -73,25 +70,15 @@ class _CameraScreenState extends State<CameraScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Image Container
               Container(
                 height: 280,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withOpacity(0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))],
                 ),
                 child: _imageFile != null
-                    ? ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.file(_imageFile!, fit: BoxFit.cover),
-                )
+                    ? ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.file(_imageFile!, fit: BoxFit.cover))
                     : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -102,8 +89,6 @@ class _CameraScreenState extends State<CameraScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Action Buttons
               Row(
                 children: [
                   Expanded(
@@ -111,12 +96,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       onPressed: () => _pickImage(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt_outlined),
                       label: const Text("Camera"),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        side: BorderSide(color: Colors.green.shade300),
-                        foregroundColor: Colors.green.shade700,
-                      ),
+                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), foregroundColor: Colors.green.shade700),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -125,48 +105,22 @@ class _CameraScreenState extends State<CameraScreen> {
                       onPressed: () => _pickImage(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library_outlined),
                       label: const Text("Gallery"),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        side: BorderSide(color: Colors.green.shade300),
-                        foregroundColor: Colors.green.shade700,
-                      ),
+                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), foregroundColor: Colors.green.shade700),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-
-              // Analyze Button
               if (_imageFile != null && _diagnosisData == null && !_isLoading)
                 FilledButton.icon(
                   onPressed: _analyzeWithAI,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text("Analyze with AI", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
+                  label: const Text("Diagnose Plant", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 ),
-
-              if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: CircularProgressIndicator(color: Colors.green),
-                  ),
-                ),
-
-              if (_errorMessage.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
-                  child: Text(_errorMessage, style: TextStyle(color: Colors.red.shade700)),
-                ),
-
+              if (_isLoading) const Center(child: Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator(color: Colors.green))),
               if (_diagnosisData != null) _buildDiagnosisCard(),
-              const SizedBox(height: 40), // Bottom padding
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -179,27 +133,8 @@ class _CameraScreenState extends State<CameraScreen> {
       return Container(
         margin: const EdgeInsets.only(top: 20),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.red.shade200),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.red.shade100, shape: BoxShape.circle),
-              child: Icon(Icons.warning_rounded, color: Colors.red.shade700),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                "Not a plant detected! Please scan a clear leaf.",
-                style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red.shade200)),
+        child: Row(children: [Icon(Icons.warning_rounded, color: Colors.red.shade700), const SizedBox(width: 16), Expanded(child: Text("Not a plant detected! Please scan a clear leaf.", style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.w600)))]),
       );
     }
 
@@ -207,11 +142,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
     return Container(
       margin: const EdgeInsets.only(top: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, 4))],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, 4))]),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -221,26 +152,16 @@ class _CameraScreenState extends State<CameraScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isHealthy ? Colors.green.shade50 : Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    isHealthy ? Icons.eco_rounded : Icons.coronavirus_rounded,
-                    color: isHealthy ? Colors.green.shade600 : Colors.orange.shade600,
-                    size: 28,
-                  ),
+                  decoration: BoxDecoration(color: isHealthy ? Colors.green.shade50 : Colors.orange.shade50, borderRadius: BorderRadius.circular(16)),
+                  child: Icon(isHealthy ? Icons.eco_rounded : Icons.coronavirus_rounded, color: isHealthy ? Colors.green.shade600 : Colors.orange.shade600, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        isHealthy ? "Healthy Plant" : "Action Required",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isHealthy ? Colors.green.shade800 : Colors.orange.shade800),
-                      ),
-                      Text("AI Confidence: ${_diagnosisData!['confidence']}%", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                      Text(isHealthy ? "Healthy Plant" : "Action Required", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isHealthy ? Colors.green.shade800 : Colors.orange.shade800)),
+                      Text("Confidence: ${_diagnosisData!['confidence']}", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -252,36 +173,36 @@ class _CameraScreenState extends State<CameraScreen> {
 
             if (!isHealthy) ...[
               const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.healing, size: 18, color: Colors.orange.shade800),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            "Treatment Plan", 
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800)
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _diagnosisData!['remedy_advice'] ?? "No remedy advice provided.", 
-                      style: TextStyle(color: Colors.orange.shade900, height: 1.5),
-                      softWrap: true,
-                    ),
-                  ],
-                ),
-              )
+              // --- DIY REMEDY BOX ---
+              _buildRemedyBox("DIY Home Solution", _diagnosisData!['diy_remedy'] ?? "N/A", Icons.home_repair_service_outlined),
+              const SizedBox(height: 12),
+              // --- COMMERCIAL REMEDY BOX ---
+              _buildRemedyBox("Commercial Product", _diagnosisData!['commercial_remedy'] ?? "N/A", Icons.shopping_cart_outlined),
             ]
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRemedyBox(String title, String advice, IconData icon) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: Colors.orange.shade800),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(advice, style: TextStyle(color: Colors.orange.shade900, height: 1.5), softWrap: true),
+        ],
       ),
     );
   }
@@ -300,11 +221,7 @@ class _CameraScreenState extends State<CameraScreen> {
               children: [
                 Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                 const SizedBox(height: 2),
-                Text(
-                  value, 
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87),
-                  softWrap: true,
-                ),
+                Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87), softWrap: true),
               ],
             ),
           ),

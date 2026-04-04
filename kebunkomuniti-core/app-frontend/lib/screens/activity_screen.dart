@@ -61,6 +61,7 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
               
               const SizedBox(height: 16),
               _buildReceiptRow("Status", order['status']),
+              _buildReceiptRow("Date", date), // THE FIX: Now using the date variable
               _buildReceiptRow("Type", isBuying ? "Buying" : "Selling"),
               _buildReceiptRow("Item", order['surplus']['item_name']),
               _buildReceiptRow("Weight", "${order['surplus']['quantity_kg']} kg"),

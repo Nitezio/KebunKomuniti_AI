@@ -7,6 +7,7 @@ class ApiService {
   static const String gatewayIp = '10.0.2.2';
   static const String gatewayUrl = 'http://$gatewayIp';
 
+  // --- Price Regulation Data ---
   static const Map<String, double> regulatedPrices = {
     "Tomatoes": 5.50,
     "Chili Padi": 16.00,
@@ -14,43 +15,40 @@ class ApiService {
     "Okra (Bendi)": 7.00,
     "Mustard Green (Sawi)": 5.00,
     "Eggplant (Terung)": 6.50,
+    "Mango": 15.00,
+    "Papaya": 4.50,
   };
 
+  // --- THE CENTRAL MARKETPLACE (Local Demo Storage) ---
+  // All markers now live here so they can be deleted upon completion.
   static List<Map<String, dynamic>> localSurplus = [
-    {
-      "id": 101, 
-      "item_name": "Tomatoes", 
-      "quantity_kg": 5.0, 
-      "latitude": 3.8150, 
-      "longitude": 103.3280, 
-      "price": 27.50,
-      "price_per_kg": 5.50,
-      "method": "Pickup",
-      "seller_name": "Neighbor Siti"
-    },
+    {"id": 201, "item_name": "Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "price_per_kg": 5.50, "method": "Pickup", "seller_name": "Neighbor Siti"},
+    {"id": 202, "item_name": "Spinach (Bayam)", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 11.25, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Ali"},
+    {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300, "price": 19.20, "price_per_kg": 16.00, "method": "Pickup", "seller_name": "Neighbor Chong"},
+    {"id": 204, "item_name": "Okra (Bendi)", "quantity_kg": 3.0, "latitude": 3.8180, "longitude": 103.3220, "price": 21.00, "price_per_kg": 7.00, "method": "Pickup", "seller_name": "Neighbor Kumar"},
+    {"id": 205, "item_name": "Papaya", "quantity_kg": 10.0, "latitude": 3.8050, "longitude": 103.3350, "price": 45.00, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Tan"},
+    {"id": 206, "item_name": "Mango", "quantity_kg": 4.5, "latitude": 3.8250, "longitude": 103.3150, "price": 67.50, "price_per_kg": 15.00, "method": "Pickup", "seller_name": "Neighbor Lee"},
   ];
   
   static List<Map<String, dynamic>> localOrders = [];
 
-  // --- Mutual Approval Logic ---
+  // --- THE MASTER HANDSHAKE FIX ---
   static Future<void> approveTransaction(int orderId, bool isBuyer) async {
     final index = localOrders.indexWhere((o) => o['id'] == orderId);
     if (index != -1) {
-      // THE FIX: Cannot verify handshake if no one has bought it yet!
-      if (localOrders[index]['buyer_name'] == "Awaiting Buyer") return;
-
-      localOrders[index]['buyer_approved'] = true;
-      localOrders[index]['seller_approved'] = true;
+      // 1. Mark as complete
       localOrders[index]['status'] = "Completed";
       localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
+      localOrders[index]['buyer_approved'] = true;
+      localOrders[index]['seller_approved'] = true;
       
-      // Remove from map once completed
+      // 2. THE MAP FIX: Remove from the map permanently
       int listingId = localOrders[index]['surplus']['id'];
       localSurplus.removeWhere((item) => item['id'] == listingId);
     }
   }
 
-  // --- Routes ---
+  // --- Routes & Connectivity ---
   static const String diagnoseUrl = '$gatewayUrl/api/vision/api/ai/diagnose';
   static const String assistantUrl = '$gatewayUrl/api/vision/api/ai/assistant';
   static const String surplusUrl = '$gatewayUrl/api/data/api/data/surplus';
@@ -66,16 +64,14 @@ class ApiService {
   }
 
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    // THE FIX: Try to find the existing listing in our activity and "claim" it
+    // Claim existing if possible
     final existingIndex = localOrders.indexWhere((o) => o['surplus']['id'] == cluster['id']);
-    
     if (existingIndex != -1) {
       localOrders[existingIndex]['buyer_name'] = buyerName;
       localOrders[existingIndex]['delivery_method'] = method;
       return true;
     }
 
-    // If it was a demo marker not in our list, add it as a new order
     localOrders.add({
       "id": DateTime.now().millisecondsSinceEpoch,
       "buyer_name": buyerName,
@@ -112,7 +108,7 @@ class ApiService {
     
     localOrders.add({
       "id": newItem['id'],
-      "buyer_name": "Awaiting Buyer", // THE FIX: Stays pending until someone orders
+      "buyer_name": "Awaiting Buyer",
       "seller_name": "Ahmad bin Razak",
       "status": "Pending",
       "buyer_approved": false,

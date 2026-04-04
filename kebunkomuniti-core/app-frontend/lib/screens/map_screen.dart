@@ -29,6 +29,7 @@ class _MapScreenState extends State<MapScreen> {
     filtered.add(Marker(point: _userLocation, width: 60, height: 60, child: const Icon(Icons.my_location, color: Colors.blue, size: 30)));
 
     for (var cluster in _allClusters) {
+      // THE FIX: Differentiate your own items from neighbors
       bool isOwnItem = cluster['seller_name'] == "Ahmad bin Razak";
       Color markerColor = isOwnItem ? Colors.orange.shade800 : Colors.green.shade700;
 
@@ -101,10 +102,12 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const Divider(height: 32),
+              
               _buildDetailRow(Icons.scale_outlined, "Total Available", "${cluster['quantity_kg']} kg"),
               _buildDetailRow(Icons.payments_outlined, "Total Price", "RM ${cluster['price']?.toStringAsFixed(2) ?? '0.00'}"),
               _buildDetailRow(Icons.local_shipping_outlined, "Method", cluster['method'] ?? "Pickup"),
               _buildDetailRow(Icons.location_on_outlined, "Distance", cluster['seller_name'] == "Ahmad bin Razak" ? "0 km (You)" : "Approx. 0.8 km away"),
+
               const SizedBox(height: 30),
               Row(
                 children: [
@@ -148,17 +151,12 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _fetchMarketplaceData() async {
     setState(() => _isLoading = true);
-    var realClusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
-    List<Map<String, dynamic>> demoData = [
-      {"id": 201, "item_name": "Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "price_per_kg": 5.50, "method": "Pickup", "seller_name": "Neighbor Siti"},
-      {"id": 202, "item_name": "Spinach (Bayam)", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 11.25, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Ali"},
-      {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300, "price": 19.20, "price_per_kg": 16.00, "method": "Pickup", "seller_name": "Neighbor Chong"},
-    ];
-    List<dynamic> combined = List.from(realClusters);
-    for (var demo in demoData) {
-      if (!combined.any((item) => item['id'] == demo['id'])) combined.add(demo);
-    }
-    setState(() { _allClusters = combined; _isLoading = false; });
+    // THE FIX: Always fetch from the central engine (No hardcoded list here)
+    var clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
+    setState(() {
+      _allClusters = clusters;
+      _isLoading = false;
+    });
     _filterMarkers(_searchController.text);
   }
 
@@ -166,7 +164,17 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0, title: TextField(controller: _searchController, onChanged: _filterMarkers, decoration: InputDecoration(hintText: "Search produce...", prefixIcon: const Icon(Icons.search, color: Colors.green), filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(vertical: 0)))),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen())); _fetchMarketplaceData(); }, label: const Text("Sell Surplus"), icon: const Icon(Icons.add_a_photo), backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          // THE FIX: Refresh map after selling
+          await Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen()));
+          _fetchMarketplaceData();
+        },
+        label: const Text("Sell Surplus"),
+        icon: const Icon(Icons.add_a_photo),
+        backgroundColor: Colors.green.shade700,
+        foregroundColor: Colors.white,
+      ),
       body: Stack(children: [FlutterMap(options: MapOptions(initialCenter: _userLocation, initialZoom: 13.0), children: [TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.kebun_komuniti'), MarkerLayer(markers: _visibleMarkers)]), if (_isLoading) const Center(child: CircularProgressIndicator(color: Colors.green))]),
     );
   }

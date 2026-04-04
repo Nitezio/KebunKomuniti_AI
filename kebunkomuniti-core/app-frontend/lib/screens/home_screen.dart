@@ -24,26 +24,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // THE RESPONSIVE FIX: Detect screen width
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAF8),
-      body: Center( // Center the whole view for Web
+      body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: isWideScreen ? 600 : double.infinity),
           child: CustomScrollView(
             slivers: [
-              // 1. Adaptive Header
               SliverAppBar(
-                expandedHeight: 220.0,
+                expandedHeight: 280.0, // Increased height for web clarity
                 floating: false,
                 pinned: true,
                 backgroundColor: Colors.green.shade700,
+                // THE FIX: Remove the title from FlexibleSpaceBar to prevent overlap
                 flexibleSpace: FlexibleSpaceBar(
-                  centerTitle: true,
-                  title: const Text("My Account", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                   background: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -52,21 +49,30 @@ class _HomeScreenState extends State<HomeScreen> {
                         colors: [Colors.green.shade400, Colors.green.shade800],
                       ),
                     ),
-                    child: SafeArea(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const CircleAvatar(
-                            radius: 45,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.person, size: 55, color: Colors.green),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text("Ahmad bin Razak", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text("Community Farmer • $_serverStatus", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13)),
-                          const SizedBox(height: 30), // Extra space to prevent title overlap
-                        ],
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 40), // Push down to avoid status bar
+                        const CircleAvatar(
+                          radius: 45,
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.person, size: 55, color: Colors.green),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "My Account",
+                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 1.2),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          "Ahmad bin Razak",
+                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "Community Farmer • $_serverStatus",
+                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -100,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildActivityRow("AI Scan: Tomato Leaf", "2 hours ago", Icons.document_scanner),
                       _buildActivityRow("Sold 2kg Chili", "Yesterday", Icons.sell),
                       
-                      const SizedBox(height: 60), // Extra bottom padding
+                      const SizedBox(height: 60),
                     ],
                   ),
                 ),

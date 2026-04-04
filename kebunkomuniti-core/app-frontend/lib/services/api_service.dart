@@ -87,7 +87,7 @@ class ApiService {
       "latitude": lat,
       "longitude": lon,
       "price": price,
-      "price_per_kg": (price / kg),
+      "price_per_kg": kg > 0 ? (price / kg) : 0.0,
       "method": method,
       "image_path": imagePath,
       "seller_name": "Ahmad bin Razak"

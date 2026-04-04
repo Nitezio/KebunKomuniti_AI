@@ -65,7 +65,7 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
               _buildReceiptRow("Type", isBuying ? "Buying" : "Selling"),
               _buildReceiptRow("Item", order['surplus']['item_name']),
               _buildReceiptRow("Weight", "${order['surplus']['quantity_kg']} kg"),
-              _buildReceiptRow("Rate", "RM ${order['surplus']['price_per_kg'].toStringAsFixed(2)} /kg"),
+              _buildReceiptRow("Rate", "RM ${(order['surplus']['price_per_kg'] ?? 0.0).toStringAsFixed(2)} /kg"),
               _buildReceiptRow("Method", order['delivery_method']),
               
               const Divider(height: 32),
@@ -73,7 +73,7 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(isBuying ? "TOTAL PAID" : "TOTAL SOLD", style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text("RM ${order['surplus']['price'].toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                  Text("RM ${(order['surplus']['price'] ?? 0.0).toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
                 ],
               ),
               const SizedBox(height: 24),

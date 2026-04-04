@@ -29,6 +29,9 @@ class _MapScreenState extends State<MapScreen> {
     filtered.add(Marker(point: _userLocation, width: 60, height: 60, child: const Icon(Icons.my_location, color: Colors.blue, size: 30)));
 
     for (var cluster in _allClusters) {
+      bool isOwnItem = cluster['seller_name'] == "Ahmad bin Razak";
+      Color markerColor = isOwnItem ? Colors.orange.shade800 : Colors.green.shade700;
+
       if (cluster['item_name'].toString().toLowerCase().contains(query.toLowerCase())) {
         filtered.add(
           Marker(
@@ -40,10 +43,17 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Colors.green.shade700, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
-                    child: Text("${cluster['quantity_kg']}kg ${cluster['item_name']}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                    decoration: BoxDecoration(
+                      color: markerColor, 
+                      borderRadius: BorderRadius.circular(20), 
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]
+                    ),
+                    child: Text(
+                      "${cluster['quantity_kg']}kg ${cluster['item_name']}", 
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)
+                    ),
                   ),
-                  const Icon(Icons.arrow_drop_down, color: Colors.green, size: 30),
+                  Icon(Icons.arrow_drop_down, color: markerColor, size: 30),
                 ],
               ),
             ),
@@ -79,7 +89,7 @@ class _MapScreenState extends State<MapScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(cluster['item_name'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        Text("Verified Neighborhood Hub", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                        Text(cluster['seller_name'] == "Ahmad bin Razak" ? "Your Listing" : "Verified Neighborhood Hub", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -91,13 +101,10 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const Divider(height: 32),
-              
-              // --- THE FIX: ALL DETAILS NOW SHOWN ---
               _buildDetailRow(Icons.scale_outlined, "Total Available", "${cluster['quantity_kg']} kg"),
               _buildDetailRow(Icons.payments_outlined, "Total Price", "RM ${cluster['price']?.toStringAsFixed(2) ?? '0.00'}"),
               _buildDetailRow(Icons.local_shipping_outlined, "Method", cluster['method'] ?? "Pickup"),
-              _buildDetailRow(Icons.location_on_outlined, "Distance", "Approx. 0.8 km away"),
-
+              _buildDetailRow(Icons.location_on_outlined, "Distance", cluster['seller_name'] == "Ahmad bin Razak" ? "0 km (You)" : "Approx. 0.8 km away"),
               const SizedBox(height: 30),
               Row(
                 children: [
@@ -118,7 +125,7 @@ class _MapScreenState extends State<MapScreen> {
                         Navigator.pop(context);
                         bool success = await ApiService.placeOrder(cluster, "Ahmad bin Razak", cluster['method'] ?? "Pickup");
                         if (success) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order reserved! Check your Activity tab.")));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order processed! Check your Activity tab.")));
                         }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
@@ -136,84 +143,31 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey.shade600),
-          const SizedBox(width: 12),
-          Text("$label: ", style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [Icon(icon, size: 20, color: Colors.grey.shade600), const SizedBox(width: 12), Text("$label: ", style: const TextStyle(color: Colors.grey)), Text(value, style: const TextStyle(fontWeight: FontWeight.bold))]));
   }
 
   Future<void> _fetchMarketplaceData() async {
     setState(() => _isLoading = true);
-    
-    // FETCH DATA
-    var clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
-
-    // --- THE FIX: ADDING MORE DEMO MARKERS ---
-    if (clusters.length < 5) {
-      clusters = [
-        {"id": 201, "item_name": "Organic Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "method": "Pickup"},
-        {"id": 202, "item_name": "Fresh Spinach", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 11.25, "method": "Delivery"},
-        {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300, "price": 19.20, "method": "Pickup"},
-        {"id": 204, "item_name": "Bendi (Okra)", "quantity_kg": 3.0, "latitude": 3.8180, "longitude": 103.3220, "price": 21.00, "method": "Pickup"},
-        {"id": 205, "item_name": "Papaya", "quantity_kg": 10.0, "latitude": 3.8050, "longitude": 103.3350, "price": 45.00, "method": "Delivery"},
-        {"id": 206, "item_name": "Mango (Harum Manis)", "quantity_kg": 4.5, "latitude": 3.8250, "longitude": 103.3150, "price": 67.50, "method": "Pickup"},
-        {"id": 207, "item_name": "Mustard Green", "quantity_kg": 2.0, "latitude": 3.8080, "longitude": 103.3180, "price": 10.00, "method": "Delivery"},
-      ];
+    var realClusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
+    List<Map<String, dynamic>> demoData = [
+      {"id": 201, "item_name": "Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "price_per_kg": 5.50, "method": "Pickup", "seller_name": "Neighbor Siti"},
+      {"id": 202, "item_name": "Spinach (Bayam)", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 11.25, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Ali"},
+      {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300, "price": 19.20, "price_per_kg": 16.00, "method": "Pickup", "seller_name": "Neighbor Chong"},
+    ];
+    List<dynamic> combined = List.from(realClusters);
+    for (var demo in demoData) {
+      if (!combined.any((item) => item['id'] == demo['id'])) combined.add(demo);
     }
-
-    setState(() {
-      _allClusters = clusters;
-      _isLoading = false;
-    });
+    setState(() { _allClusters = combined; _isLoading = false; });
     _filterMarkers(_searchController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: TextField(
-          controller: _searchController,
-          onChanged: _filterMarkers,
-          decoration: InputDecoration(
-            hintText: "Search produce...",
-            prefixIcon: const Icon(Icons.search, color: Colors.green),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(vertical: 0),
-          ),
-        ),
-        actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.green), onPressed: _fetchMarketplaceData)],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen())),
-        label: const Text("Sell Surplus"),
-        icon: const Icon(Icons.add_a_photo),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            options: MapOptions(initialCenter: _userLocation, initialZoom: 13.0),
-            children: [
-              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.kebun_komuniti'),
-              MarkerLayer(markers: _visibleMarkers),
-            ],
-          ),
-          if (_isLoading) const Center(child: CircularProgressIndicator(color: Colors.green)),
-        ],
-      ),
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, title: TextField(controller: _searchController, onChanged: _filterMarkers, decoration: InputDecoration(hintText: "Search produce...", prefixIcon: const Icon(Icons.search, color: Colors.green), filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(vertical: 0)))),
+      floatingActionButton: FloatingActionButton.extended(onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen())); _fetchMarketplaceData(); }, label: const Text("Sell Surplus"), icon: const Icon(Icons.add_a_photo), backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+      body: Stack(children: [FlutterMap(options: MapOptions(initialCenter: _userLocation, initialZoom: 13.0), children: [TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.kebun_komuniti'), MarkerLayer(markers: _visibleMarkers)]), if (_isLoading) const Center(child: CircularProgressIndicator(color: Colors.green))]),
     );
   }
 }

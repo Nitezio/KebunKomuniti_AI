@@ -7,7 +7,7 @@ class ApiService {
   static const String gatewayIp = '10.0.2.2';
   static const String gatewayUrl = 'http://$gatewayIp';
 
-  // --- Price Regulation Data (FAMA Malaysia Standards) ---
+  // --- Price Regulation Data ---
   static const Map<String, double> regulatedPrices = {
     "Tomatoes": 5.50,
     "Chili Padi": 16.00,
@@ -65,16 +65,23 @@ class ApiService {
   }
 
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
+    bool isSelfBuy = cluster['seller_name'] == buyerName;
+    
     localOrders.add({
       "id": DateTime.now().millisecondsSinceEpoch,
       "buyer_name": buyerName,
       "seller_name": cluster['seller_name'] ?? "Neighbor",
-      "status": "Pending",
-      "buyer_approved": false,
-      "seller_approved": false,
+      "status": isSelfBuy ? "Completed" : "Pending", 
+      "buyer_approved": isSelfBuy,
+      "seller_approved": isSelfBuy,
       "delivery_method": method,
       "created_at": DateTime.now().toIso8601String(),
-      "surplus": cluster
+      "completed_at": isSelfBuy ? DateTime.now().toIso8601String() : null,
+      "surplus": {
+        ...cluster,
+        "price": cluster['price'] ?? 0.0,
+        "price_per_kg": cluster['price_per_kg'] ?? 0.0,
+      }
     });
     return true;
   }
@@ -92,7 +99,9 @@ class ApiService {
       "image_path": imagePath,
       "seller_name": "Ahmad bin Razak"
     };
-    localSurplus.add(newItem);
+    
+    localSurplus.add(newItem); // THE FIX: Ensure it goes to map list
+    
     localOrders.add({
       "id": newItem['id'],
       "buyer_name": "Awaiting Buyer",

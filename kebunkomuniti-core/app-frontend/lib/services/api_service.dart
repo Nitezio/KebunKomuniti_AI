@@ -43,8 +43,32 @@ class ApiService {
     }
   }
 
+  static const String addSurplusUrl = '$gatewayUrl/api/data/api/data/add';
+
   // --- Neighborhood Aggregator (The Marketplace) ---
   static Future<List<dynamic>> getNeighborhoodSurplus(double lat, double lon) async {
+    // ...
+  }
+
+  static Future<bool> listSurplus(String name, double kg, double lat, double lon) async {
+    try {
+      final response = await http.post(
+        Uri.parse(addSurplusUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "item_name": name,
+          "quantity_kg": kg,
+          "latitude": lat,
+          "longitude": lon
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Listing Error: $e");
+      return false;
+    }
+  }
+}
     try {
       final response = await http.post(
         Uri.parse(surplusUrl),

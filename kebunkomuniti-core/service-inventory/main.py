@@ -26,9 +26,32 @@ class LocationRequest(BaseModel):
     longitude: float
     radius_km: float = 3.0
 
+class SurplusItem(BaseModel):
+    item_name: String
+    quantity_kg: float
+    latitude: float
+    longitude: float
+
 @app.get("/")
 def read_root():
     return {"status": "Inventory Spatial Service is running!"}
+
+@app.post("/api/data/add")
+def add_surplus_item(item: SurplusItem):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database connection failed.")
+    
+    try:
+        # Insert into Supabase with PostGIS POINT format
+        data = {
+            "item_name": item.item_name,
+            "quantity_kg": item.quantity_kg,
+            "location": f"POINT({item.longitude} {item.latitude})"
+        }
+        supabase.table("surplus").insert(data).execute()
+        return {"success": true, "message": "Item listed successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/data/surplus")
 def get_clustered_surplus(request: LocationRequest):

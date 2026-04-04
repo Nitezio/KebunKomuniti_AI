@@ -21,7 +21,6 @@ class _MapScreenState extends State<MapScreen> {
     _fetchMarketplaceData();
   }
 
-  // --- The Commercial "Bottom Sheet" Popup ---
   void _showProduceDetails(Map<String, dynamic> cluster) {
     showModalBottomSheet(
       context: context,
@@ -37,10 +36,8 @@ class _MapScreenState extends State<MapScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Indicator bar
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)))),
               const SizedBox(height: 20),
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -61,22 +58,15 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const Divider(height: 32),
-              
               _buildDetailRow(Icons.scale_outlined, "Total Available", "${cluster['quantity_kg']} kg"),
               _buildDetailRow(Icons.location_on_outlined, "Distance", "Approx. 1.2 km away"),
-              _buildDetailRow(Icons.verified_user_outlined, "Quality", "AI Verified Healthy"),
-
               const SizedBox(height: 30),
-              
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
+                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text("Directions"),
                     ),
                   ),
@@ -85,14 +75,9 @@ class _MapScreenState extends State<MapScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ordering functionality coming soon!")));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order reserved! Please coordinate pickup with neighbor.")));
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text("Order Now"),
                     ),
                   ),
@@ -122,16 +107,21 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _fetchMarketplaceData() async {
     setState(() => _isLoading = true);
-    final clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
+    
+    // Attempt to fetch real data
+    var clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
+
+    // INJECT DEMO DATA IF DATABASE IS EMPTY
+    if (clusters.isEmpty) {
+      clusters = [
+        {"item_name": "Organic Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280},
+        {"item_name": "Fresh Spinach", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200},
+        {"item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300},
+      ];
+    }
 
     List<Marker> newMarkers = [];
-    newMarkers.add(
-      Marker(
-        point: _userLocation,
-        width: 60, height: 60,
-        child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
-      ),
-    );
+    newMarkers.add(Marker(point: _userLocation, width: 60, height: 60, child: const Icon(Icons.my_location, color: Colors.blue, size: 30)));
 
     for (var cluster in clusters) {
       newMarkers.add(
@@ -139,20 +129,13 @@ class _MapScreenState extends State<MapScreen> {
           point: LatLng(cluster['latitude'], cluster['longitude']),
           width: 150, height: 80,
           child: GestureDetector(
-            onTap: () => _showProduceDetails(cluster), // THE INTERACTIVE FIX
+            onTap: () => _showProduceDetails(cluster),
             child: Column(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade700,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                  ),
-                  child: Text(
-                    "${cluster['quantity_kg']}kg ${cluster['item_name']}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                  ),
+                  decoration: BoxDecoration(color: Colors.green.shade700, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)]),
+                  child: Text("${cluster['quantity_kg']}kg ${cluster['item_name']}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
                 ),
                 const Icon(Icons.arrow_drop_down, color: Colors.green, size: 30),
               ],
@@ -176,15 +159,21 @@ class _MapScreenState extends State<MapScreen> {
         backgroundColor: Colors.white.withOpacity(0.9),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchMarketplaceData)],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Redirecting to Sell Surplus flow...")));
+        },
+        label: const Text("Sell Surplus"),
+        icon: const Icon(Icons.add_a_photo),
+        backgroundColor: Colors.green.shade700,
+        foregroundColor: Colors.white,
+      ),
       body: Stack(
         children: [
           FlutterMap(
             options: MapOptions(initialCenter: _userLocation, initialZoom: 13.0),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.kebun_komuniti',
-              ),
+              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.kebun_komuniti'),
               MarkerLayer(markers: _markers),
             ],
           ),

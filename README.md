@@ -1,96 +1,89 @@
-<<<<<<< HEAD
-# kebun_komuniti
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
 # KebunKomuniti AI 🌿
 
-**Empowering Urban Food Security through AI-Driven Hyper-Local Aggregation.**
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.29+-blue.svg)](https://flutter.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)](https://www.docker.com/)
+[![SDG 2](https://img.shields.io/badge/SDG-2-green.svg)](https://sdgs.un.org/goals/goal2)
+[![SDG 9](https://img.shields.io/badge/SDG-9-orange.svg)](https://sdgs.un.org/goals/goal9)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
 
-KebunKomuniti AI is a decentralized community farming platform designed to turn neighborhoods into resilient, self-sustaining food hubs. By utilizing AI and geo-spatial mapping, we help urban farmers manage their crops and pool micro-surpluses into bulk orders for local restaurants and food banks.
+**Decentralizing Urban Food Security through AI-Driven Hyper-Local Aggregation.**
+
+KebunKomuniti AI is a professional-grade community farming platform that transforms urban neighborhoods into resilient, self-sustaining food hubs. By combining Multimodal AI, Geo-spatial clustering, and a secure microservices architecture, we enable communities to diagnose crops, pool surpluses, and trade locally with zero logistics waste.
 
 ---
 
-## 🚀 The Core Concept
+## 🚀 Key Features
 
-Urban food security is often hindered by high delivery costs for small-scale produce. KebunKomuniti AI solves this by:
-- **AI Plant Doctor:** Uses computer vision (Gemini 2.5 Flash) to diagnose plant diseases and provide localized fixes.
-- **Neighborhood Aggregator:** A proprietary algorithm that clusters nearby micro-surpluses (e.g., 500g from 20 houses) into single 10kg bulk listings.
-- **Hyper-Local Geo-Fencing:** Filters marketplace results to a walkable 3km-5km radius, eliminating traditional logistics costs.
+### 👨‍⚕️ AI Plant Doctor (Intelligence)
+Powered by **Google Gemini 2.5 Flash**, the platform provides a multimodal computer vision system that identifies plant species and diagnoses diseases from a single photo. 
+- **Automated Triage:** Built-in guardrails detect and reject non-plant images to optimize API usage.
+- **Organic Remediation:** Provides localized Fixes and organic farming advice.
+
+### 📦 Neighborhood Aggregator (Logistics)
+A sophisticated **DBSCAN Clustering Algorithm** that solves the "Micro-Batch" problem.
+- **Bulk Pooling:** Automatically groups small surpluses (e.g., 500g from 20 houses) into a single high-volume hub (10kg) for bulk buyers.
+- **FAMA Price Regulation:** Integrated price-cap engine based on Malaysian government standards (+20% max fluctuation) to prevent community price gouging.
+
+### 📍 Hyper-Local Geo-Fencing (Spatial)
+Utilizes **PostGIS** to restrict marketplace discovery to a walkable 3km-5km radius.
+- **Zero Emission:** Eliminates the need for delivery riders by focusing on neighborhood-only transactions.
+- **Real-time Map:** Interactive Material 3 Map with dynamic markers and integrated Google Maps directions.
+
+### 🤝 Secure Marketplace Ledger (Trust)
+A professional transaction system designed for community trust.
+- **Mutual 2-Way Handshake:** Transactions are only finalized once **both** the seller and buyer verify delivery/pickup on-site.
+- **Digital Receipts:** Generates professional chronological ledgers with unique Order IDs and precise timestamps.
+
+---
 
 ## 🏗️ Technical Architecture
 
-We use a **Dockerized Microservices Architecture** to ensure fault isolation and scalability:
-- **Frontend:** Flutter Mobile App (Android/iOS).
-- **API Gateway:** NGINX (Reverse Proxy, Rate-Limiting, Security Headers).
-- **Service AI:** Python/FastAPI + Google Gemini 2.5 Flash API + Supabase DB.
-- **Service Inventory:** Python/FastAPI + Supabase (PostgreSQL/PostGIS).
-- **Orchestration:** Docker Compose (Local/Demo Environment).
+The platform follows a **Dockerized Microservices Architecture** for maximum scalability and fault isolation.
+
+- **API Gateway (NGINX):** The secure entry point handling reverse-proxying, rate-limiting (10r/s), and internal microservice routing.
+- **AI Service (FastAPI):** A high-performance Python service managing multimodal LLM interactions and computer vision logic.
+- **Inventory Service (FastAPI):** A data science engine managing DBSCAN clustering and PostGIS spatial queries.
+- **Database (Supabase):** Cloud-native PostgreSQL providing persistence and geo-spatial data types.
+- **Frontend (Flutter):** A modern Material 3 mobile application supporting cross-platform Android and iOS deployment.
 
 ---
 
-## 🛡️ Security & Auditing (Defense-in-Depth)
-
-The platform is built with a multi-layered security approach:
-1. **Network Level (NGINX):** Rate-limited to 10 requests per second per IP to mitigate DDoS.
-2. **Application Level (FastAPI):** Internal rate-limiting (5 requests/minute) to protect Gemini API keys from accidental spam.
-3. **Data Level (Validation):** Multi-modal guardrails ensure the AI only processes farming-related images.
-4. **Environment Security:** Secrets are managed via `.env` and are strictly excluded from repository tracking.
-
----
-
-## 💻 Getting Started (For Developers)
+## 💻 System Deployment
 
 ### 1. Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Git](https://git-scm.com/)
-- [VS Code](https://code.visualstudio.com/)
+- **Docker & Docker Compose**
+- **Flutter SDK (3.29+)**
+- **Google Gemini API Key**
 
-### 2. Initial Setup
-```bash
-git clone https://github.com/Nitezio/KebunKomuniti_AI.git
-cd KebunKomuniti_AI
-git checkout nitesh
-```
-
-### 3. Environment Configuration
-Navigate to the core directory and create your local environment file:
+### 2. Infrastructure Setup
 ```bash
 cd kebunkomuniti-core
-cp .env.example .env
-```
-*Edit the `.env` file with your `GEMINI_API_KEY` and `SUPABASE` credentials.*
-
-### 4. Running the Ecosystem
-```bash
 docker-compose up --build
 ```
-The **API Gateway** will be available at `http://localhost:80`.
+*The API Gateway will be listening on Port 80.*
+
+### 3. Frontend Setup
+Update the `api_service.dart` with your gateway address (Localhost or Ngrok URL) and run:
+```bash
+flutter pub get
+flutter run
+```
 
 ---
 
-## 🗺️ Project Roadmap
-- [x] Initial Infrastructure & NGINX Gateway
-- [x] Dockerization of Microservices
-- [x] AI Service Integration (Gemini 2.5 Flash + Supabase)
-- [x] Application-Level Security & Rate Limiting
-- [ ] Inventory & Spatial Engine implementation (Service Inventory)
-- [ ] Flutter UI Prototype Integration
-- [ ] Ngrok Tunneling for Live Demo
+## 🛡️ Security Posture
+- **Defense-in-Depth:** Multi-layered rate limiting at both the Gateway (NGINX) and Application (SlowAPI) levels.
+- **Environment Isolation:** All secrets are managed via strictly ignored `.env` files.
+- **Crash Protection:** Fail-safe database connection logic ensures the AI remains operational even if the cloud database is intermittently offline.
 
 ---
-*Created for PutraHack 2026. Built with 💚 for a sustainable future.*
->>>>>>> 224b6bb846a4a459d763d76ccc26098edb511b42
+
+## 🗺️ Future Roadmap
+- [ ] QR-Code Physical Handshake verification.
+- [ ] Integrated Peer-to-Peer Chat Bridge.
+- [ ] Push Notifications for nearby harvest alerts.
+- [ ] Multi-neighborhood "Mega-Hub" scaling.
+
+---
+*Developed for PutraHack 2026. Built with 💚 for sustainable urban communities.*

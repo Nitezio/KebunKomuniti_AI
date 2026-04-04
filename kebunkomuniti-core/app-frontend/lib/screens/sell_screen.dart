@@ -13,6 +13,8 @@ class SellScreen extends StatefulWidget {
 class _SellScreenState extends State<SellScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  
+  // THE FIX: Single controller for the produce name
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   double _price = 0.0;
@@ -20,13 +22,14 @@ class _SellScreenState extends State<SellScreen> {
   String _method = "Pickup";
   bool _isAnalyzing = false;
 
-  void _onNameChanged(String value) {
-    if (ApiService.regulatedPrices.containsKey(value)) {
-      setState(() {
+  void _onNameSelected(String value) {
+    setState(() {
+      _nameController.text = value; // Update the main controller
+      if (ApiService.regulatedPrices.containsKey(value)) {
         _basePricePerKg = ApiService.regulatedPrices[value]!;
         _calculateTotal();
-      });
-    }
+      }
+    });
   }
 
   void _calculateTotal() {
@@ -45,7 +48,7 @@ class _SellScreenState extends State<SellScreen> {
     if (newPrice >= 0 && newPrice <= maxTotal) {
       setState(() => _price = newPrice);
     } else if (newPrice > maxTotal) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Price exceeds regulation limit!")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Price exceeds regulation limit! (+20%)")));
     }
   }
 
@@ -58,9 +61,11 @@ class _SellScreenState extends State<SellScreen> {
       });
       final aiResult = await ApiService.getListingAssistant(_imageFile!);
       if (aiResult != null) {
-        _nameController.text = aiResult['item_name'] ?? "";
-        _weightController.text = aiResult['estimated_weight_kg']?.toString() ?? "";
-        _onNameChanged(_nameController.text);
+        setState(() {
+          _nameController.text = aiResult['item_name'] ?? "";
+          _weightController.text = aiResult['estimated_weight_kg']?.toString() ?? "";
+          _onNameSelected(_nameController.text);
+        });
       }
       setState(() => _isAnalyzing = false);
     }
@@ -81,15 +86,18 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   Future<void> _submitListing() async {
-    if (_nameController.text.isEmpty || _weightController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all details")));
+    // THE FIX: Better validation check
+    final String produceName = _nameController.text.trim();
+    final String weightText = _weightController.text.trim();
+
+    if (produceName.isEmpty || weightText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("⚠️ Please fill in all details!")));
       return;
     }
     
-    // THE FIX: Provide all 7 required arguments to match ApiService
     bool success = await ApiService.listSurplus(
-      _nameController.text, 
-      double.tryParse(_weightController.text) ?? 0.0, 
+      produceName, 
+      double.tryParse(weightText) ?? 0.0, 
       3.8126, 103.3256,
       _price, 
       _method, 
@@ -98,7 +106,7 @@ class _SellScreenState extends State<SellScreen> {
 
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Produce listed for sale!")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Produce listed for sale!")));
     }
   }
 
@@ -123,13 +131,23 @@ class _SellScreenState extends State<SellScreen> {
             if (_isAnalyzing) const LinearProgressIndicator(color: Colors.green),
             const SizedBox(height: 24),
             
+            // THE FIX: Autocomplete now correctly writes to _nameController
             Autocomplete<String>(
               optionsBuilder: (TextEditingValue textEditingValue) {
                 return ApiService.regulatedPrices.keys.where((String option) => option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
               },
-              onSelected: _onNameChanged,
+              onSelected: _onNameSelected,
               fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                return TextField(controller: controller, focusNode: focusNode, decoration: const InputDecoration(labelText: "Produce Name", border: OutlineInputBorder()));
+                // Pre-fill controller if name is already set by AI
+                if (_nameController.text.isNotEmpty && controller.text.isEmpty) {
+                  controller.text = _nameController.text;
+                }
+                return TextField(
+                  controller: controller, 
+                  focusNode: focusNode, 
+                  onChanged: (val) => _nameController.text = val, // SYNC BACK
+                  decoration: const InputDecoration(labelText: "Produce Name (e.g. Tomatoes)", border: OutlineInputBorder())
+                );
               },
             ),
             

@@ -79,7 +79,7 @@ class _MapScreenState extends State<MapScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(cluster['item_name'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        Text("Nearby Community Hub", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                        Text("Verified Neighborhood Hub", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -91,8 +91,13 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const Divider(height: 32),
+              
+              // --- THE FIX: ALL DETAILS NOW SHOWN ---
               _buildDetailRow(Icons.scale_outlined, "Total Available", "${cluster['quantity_kg']} kg"),
-              _buildDetailRow(Icons.location_on_outlined, "Distance", "Approx. 1.2 km away"),
+              _buildDetailRow(Icons.payments_outlined, "Total Price", "RM ${cluster['price']?.toStringAsFixed(2) ?? '0.00'}"),
+              _buildDetailRow(Icons.local_shipping_outlined, "Method", cluster['method'] ?? "Pickup"),
+              _buildDetailRow(Icons.location_on_outlined, "Distance", "Approx. 0.8 km away"),
+
               const SizedBox(height: 30),
               Row(
                 children: [
@@ -100,7 +105,7 @@ class _MapScreenState extends State<MapScreen> {
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        ApiService.openMapDirections(cluster['latitude'], cluster['longitude']); // THE FIX
+                        ApiService.openMapDirections(cluster['latitude'], cluster['longitude']);
                       },
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text("Directions"),
@@ -111,10 +116,9 @@ class _MapScreenState extends State<MapScreen> {
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(context);
-                        // THE FIX: Place real order
-                        bool success = await ApiService.placeOrder(cluster, "Ahmad bin Razak", "Pickup");
+                        bool success = await ApiService.placeOrder(cluster, "Ahmad bin Razak", cluster['method'] ?? "Pickup");
                         if (success) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order placed! Check your Activity tab.")));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order reserved! Check your Activity tab.")));
                         }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
@@ -147,7 +151,23 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _fetchMarketplaceData() async {
     setState(() => _isLoading = true);
+    
+    // FETCH DATA
     var clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
+
+    // --- THE FIX: ADDING MORE DEMO MARKERS ---
+    if (clusters.length < 5) {
+      clusters = [
+        {"id": 201, "item_name": "Organic Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "method": "Pickup"},
+        {"id": 202, "item_name": "Fresh Spinach", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 11.25, "method": "Delivery"},
+        {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300, "price": 19.20, "method": "Pickup"},
+        {"id": 204, "item_name": "Bendi (Okra)", "quantity_kg": 3.0, "latitude": 3.8180, "longitude": 103.3220, "price": 21.00, "method": "Pickup"},
+        {"id": 205, "item_name": "Papaya", "quantity_kg": 10.0, "latitude": 3.8050, "longitude": 103.3350, "price": 45.00, "method": "Delivery"},
+        {"id": 206, "item_name": "Mango (Harum Manis)", "quantity_kg": 4.5, "latitude": 3.8250, "longitude": 103.3150, "price": 67.50, "method": "Pickup"},
+        {"id": 207, "item_name": "Mustard Green", "quantity_kg": 2.0, "latitude": 3.8080, "longitude": 103.3180, "price": 10.00, "method": "Delivery"},
+      ];
+    }
+
     setState(() {
       _allClusters = clusters;
       _isLoading = false;

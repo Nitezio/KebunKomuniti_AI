@@ -6,12 +6,22 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
-  // THE ADAPTIVE FIX: 
-  // Mobile Emulator needs 10.0.2.2
-  // Web Browser needs localhost
-  static String get _baseIp => kIsWeb ? 'localhost' : '10.0.2.2';
-  
-  static String get gatewayUrl => 'http://$_baseIp';
+  // --- THE SMART GATEWAY FIX ---
+  static String get gatewayUrl {
+    if (kIsWeb) {
+      // In Web, use the current domain (removes 'localhost' hardcoding)
+      // This handles Ngrok, Localhost, or a real Domain automatically.
+      String origin = Uri.base.origin;
+      return origin;
+    }
+    // In Mobile Emulator, use the standard bridge
+    return 'http://10.0.2.2';
+  }
+
+  // --- Ngrok Bypass Header ---
+  static const Map<String, String> ngrokHeaders = {
+    "ngrok-skip-browser-warning": "true",
+  };
 
   // --- Endpoints ---
   static String get diagnoseUrl => '$gatewayUrl/api/vision/api/ai/diagnose';
@@ -50,6 +60,8 @@ class ApiService {
   static Future<Map<String, dynamic>?> analyzePlant(XFile imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(diagnoseUrl));
+      request.headers.addAll(ngrokHeaders); // BYPASS NGROK WARNING
+      
       if (kIsWeb) {
         var bytes = await imageFile.readAsBytes();
         request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'upload.jpg'));
@@ -62,7 +74,6 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print("AI Error: $e");
       return null;
     }
   }
@@ -70,6 +81,8 @@ class ApiService {
   static Future<Map<String, dynamic>?> getListingAssistant(XFile imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(assistantUrl));
+      request.headers.addAll(ngrokHeaders);
+      
       if (kIsWeb) {
         var bytes = await imageFile.readAsBytes();
         request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'upload.jpg'));
@@ -94,7 +107,8 @@ class ApiService {
 
   static Future<bool> listSurplus(String name, double kg, double lat, double lon, double price, String method, String? imagePath) async {
     localSurplus.add({
-      "id": DateTime.now().millisecondsSinceEpoch, "item_name": name, "quantity_kg": kg, "latitude": lat, "longitude": lon, "price": price, "price_per_kg": (price/kg), "method": method, "image_path": imagePath, "seller_name": "Ahmad bin Razak"
+      "id": DateTime.now().millisecondsSinceEpoch,
+      "item_name": name, "quantity_kg": kg, "latitude": lat, "longitude": lon, "price": price, "price_per_kg": (price/kg), "method": method, "image_path": imagePath, "seller_name": "Ahmad bin Razak"
     });
     return true;
   }
@@ -104,7 +118,7 @@ class ApiService {
 
   static Future<String> pingBackend() async {
     try {
-      final response = await http.get(Uri.parse('$gatewayUrl/health')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$gatewayUrl/health'), headers: ngrokHeaders).timeout(const Duration(seconds: 5));
       return response.statusCode == 200 ? "Success" : "Offline";
     } catch (e) { return "Offline"; }
   }

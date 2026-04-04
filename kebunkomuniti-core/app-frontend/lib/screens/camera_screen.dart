@@ -128,7 +128,7 @@ class _CameraScreenState extends State<CameraScreen> {
               if (_errorMessage.isNotEmpty) 
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
-                  child: Text(_errorMessage, textAlign: Center, style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                  child: Text(_errorMessage, textAlign: TextAlign.center, style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
                 ),
               if (_diagnosisData != null) _buildDiagnosisCard(),
               const SizedBox(height: 40),

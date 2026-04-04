@@ -8,12 +8,13 @@ class ApiService {
   // --- THE SMART GATEWAY FIX ---
   static String get gatewayUrl {
     if (kIsWeb) {
-      // In Web, use the current domain (removes 'localhost' hardcoding)
-      // This handles Ngrok, Localhost, or a real Domain automatically.
       String origin = Uri.base.origin;
+      // If we are debugging on localhost:5000+, redirect to NGINX on Port 80
+      if (origin.contains('localhost') && !origin.endsWith(':80')) {
+        return 'http://localhost'; 
+      }
       return origin;
     }
-    // In Mobile Emulator, use the standard bridge
     return 'http://10.0.2.2';
   }
 

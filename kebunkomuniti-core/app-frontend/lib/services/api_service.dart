@@ -10,6 +10,7 @@ class ApiService {
   // Endpoints routed via NGINX Gateway
   static const String diagnoseUrl = '$gatewayUrl/api/vision/api/ai/diagnose';
   static const String surplusUrl = '$gatewayUrl/api/data/api/data/surplus';
+  static const String addSurplusUrl = '$gatewayUrl/api/data/api/data/add';
 
   // --- Connection Test ---
   static Future<String> pingBackend() async {
@@ -43,13 +44,31 @@ class ApiService {
     }
   }
 
-  static const String addSurplusUrl = '$gatewayUrl/api/data/api/data/add';
-
   // --- Neighborhood Aggregator (The Marketplace) ---
   static Future<List<dynamic>> getNeighborhoodSurplus(double lat, double lon) async {
-    // ...
+    try {
+      final response = await http.post(
+        Uri.parse(surplusUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "latitude": lat,
+          "longitude": lon,
+          "radius_km": 5.0
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        return data['clusters'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      print("Marketplace Error: $e");
+      return [];
+    }
   }
 
+  // --- List New Surplus ---
   static Future<bool> listSurplus(String name, double kg, double lat, double lon) async {
     try {
       final response = await http.post(
@@ -66,28 +85,6 @@ class ApiService {
     } catch (e) {
       print("Listing Error: $e");
       return false;
-    }
-  }
-}
-    try {
-      final response = await http.post(
-        Uri.parse(surplusUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "latitude": lat,
-          "longitude": lon,
-          "radius_km": 5.0
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        return data['clusters'] ?? [];
-      }
-      return [];
-    } catch (e) {
-      print("Marketplace Error: $e");
-      return [];
     }
   }
 }

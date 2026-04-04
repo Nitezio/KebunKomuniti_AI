@@ -34,26 +34,19 @@ class ApiService {
   
   static List<Map<String, dynamic>> localOrders = [];
 
-  // --- THE MASTER HANDSHAKE FIX ---
+  // --- THE ONE-SIDED INSTANT HANDSHAKE FIX ---
   static Future<void> approveTransaction(int orderId, bool isBuyer) async {
     final index = localOrders.indexWhere((o) => o['id'] == orderId);
     if (index != -1) {
-      // 1. Mark the approval
-      if (isBuyer) localOrders[index]['buyer_approved'] = true;
-      else localOrders[index]['seller_approved'] = true;
-
-      // 2. Logic: For the demo, one click finishes your own items. 
-      // For neighbors, it requires both (Realism).
-      bool isSelfBuy = localOrders[index]['buyer_name'] == localOrders[index]['seller_name'];
+      // THE DEMO FIX: One click from the user is enough to finish the flow
+      localOrders[index]['status'] = "Completed";
+      localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
+      localOrders[index]['buyer_approved'] = true;
+      localOrders[index]['seller_approved'] = true;
       
-      if (isSelfBuy || (localOrders[index]['buyer_approved'] == true && localOrders[index]['seller_approved'] == true)) {
-        localOrders[index]['status'] = "Completed";
-        localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
-        
-        // --- THE MAP FIX: Remove the item from the map once sold/bought ---
-        int listingId = localOrders[index]['surplus']['id'];
-        localSurplus.removeWhere((item) => item['id'] == listingId);
-      }
+      // --- THE MAP FIX: Remove the item from the map immediately ---
+      int listingId = localOrders[index]['surplus']['id'];
+      localSurplus.removeWhere((item) => item['id'] == listingId);
     }
   }
 
@@ -73,7 +66,7 @@ class ApiService {
   }
 
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    // Prevent duplicate orders for the same item in the demo
+    // Prevent duplicate orders for same item
     if (localOrders.any((o) => o['surplus']['id'] == cluster['id'] && o['status'] == "Pending")) {
       return true; 
     }

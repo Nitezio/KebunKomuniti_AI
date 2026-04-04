@@ -122,7 +122,9 @@ class _ActivityScreenState extends State<ActivityScreen> with SingleTickerProvid
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final order = filtered[index];
-        final bool isBuying = order['buyer_name'] == _userName;
+        // THE FIX: If I am the seller, always show "Selling" (Green) for the demo
+        final bool isActuallySelling = order['seller_name'] == _userName;
+        final bool isBuying = !isActuallySelling;
 
         return GestureDetector(
           onTap: () => _showReceipt(order),

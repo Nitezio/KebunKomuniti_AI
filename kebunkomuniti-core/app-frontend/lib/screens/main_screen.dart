@@ -14,12 +14,18 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const MapScreen(),
-    const CameraScreen(),
-    const ActivityScreen(), // NEW: Activity tab
-    const HomeScreen(),
-  ];
+  // THE REFRESH FIX: 
+  // We now use a function to return the widget. 
+  // This forces the page to reload its data every time you tap the tab.
+  Widget _getPage(int index) {
+    switch (index) {
+      case 0: return const MapScreen();
+      case 1: return const CameraScreen();
+      case 2: return const ActivityScreen();
+      case 3: return const HomeScreen();
+      default: return const MapScreen();
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -30,10 +36,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _pages[_selectedIndex],
-      ),
+      body: _getPage(_selectedIndex), // No more cache, always fresh data for the demo
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,

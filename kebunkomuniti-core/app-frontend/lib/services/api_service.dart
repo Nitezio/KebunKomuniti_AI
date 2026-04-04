@@ -7,16 +7,49 @@ class ApiService {
   static const String gatewayIp = '10.0.2.2';
   static const String gatewayUrl = 'http://$gatewayIp';
 
-  // --- LOCAL DEMO STORAGE (The "Mock" Database) ---
-  // This ensures the app works perfectly for your pitch even without Supabase
+  // --- Price Regulation Data (FAMA Malaysia Standards) ---
+  static const Map<String, double> regulatedPrices = {
+    "Tomatoes": 5.50,
+    "Chili Padi": 16.00,
+    "Spinach (Bayam)": 4.50,
+    "Okra (Bendi)": 7.00,
+    "Mustard Green (Sawi)": 5.00,
+    "Eggplant (Terung)": 6.50,
+  };
+
+  // --- LOCAL DEMO STORAGE ---
   static List<Map<String, dynamic>> localSurplus = [
-    {"id": 101, "item_name": "Organic Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 12.0},
-    {"id": 102, "item_name": "Fresh Spinach", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200, "price": 8.0},
+    {
+      "id": 101, 
+      "item_name": "Tomatoes", 
+      "quantity_kg": 5.0, 
+      "latitude": 3.8150, 
+      "longitude": 103.3280, 
+      "price": 27.50,
+      "price_per_kg": 5.50,
+      "method": "Pickup",
+      "image_path": null,
+      "seller_name": "Neighbor Siti"
+    },
   ];
   
   static List<Map<String, dynamic>> localOrders = [];
 
-  // --- Endpoints ---
+  // --- Mutual Approval Logic ---
+  static Future<void> approveTransaction(int orderId, bool isBuyer) async {
+    final index = localOrders.indexWhere((o) => o['id'] == orderId);
+    if (index != -1) {
+      if (isBuyer) localOrders[index]['buyer_approved'] = true;
+      else localOrders[index]['seller_approved'] = true;
+
+      if (localOrders[index]['buyer_approved'] == true && localOrders[index]['seller_approved'] == true) {
+        localOrders[index]['status'] = "Completed";
+        localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
+      }
+    }
+  }
+
+  // --- Routes ---
   static const String diagnoseUrl = '$gatewayUrl/api/vision/api/ai/diagnose';
   static const String assistantUrl = '$gatewayUrl/api/vision/api/ai/assistant';
   static const String surplusUrl = '$gatewayUrl/api/data/api/data/surplus';
@@ -24,7 +57,6 @@ class ApiService {
   static const String orderUrl = '$gatewayUrl/api/data/api/data/order';
   static const String historyUrl = '$gatewayUrl/api/data/api/data/history';
 
-  // --- Directions Logic ---
   static Future<void> openMapDirections(double lat, double lon) async {
     final url = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon';
     if (await canLaunchUrl(Uri.parse(url))) {
@@ -32,23 +64,14 @@ class ApiService {
     }
   }
 
-  // --- Order Logic ---
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    // 1. Try real DB
-    try {
-      final response = await http.post(
-        Uri.parse(orderUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"listing_id": cluster['id'], "buyer_name": buyerName, "delivery_method": method}),
-      );
-      if (response.statusCode == 200) return true;
-    } catch (e) { print("DB Order failed, using local backup"); }
-
-    // 2. Local Backup (Keep demo running)
     localOrders.add({
       "id": DateTime.now().millisecondsSinceEpoch,
       "buyer_name": buyerName,
+      "seller_name": cluster['seller_name'] ?? "Neighbor",
       "status": "Pending",
+      "buyer_approved": false,
+      "seller_approved": false,
       "delivery_method": method,
       "created_at": DateTime.now().toIso8601String(),
       "surplus": cluster
@@ -56,8 +79,7 @@ class ApiService {
     return true;
   }
 
-  // --- Listing Logic ---
-  static Future<bool> listSurplus(String name, double kg, double lat, double lon, double price) async {
+  static Future<bool> listSurplus(String name, double kg, double lat, double lon, double price, String method, String? imagePath) async {
     final newItem = {
       "id": DateTime.now().millisecondsSinceEpoch,
       "item_name": name,
@@ -65,48 +87,34 @@ class ApiService {
       "latitude": lat,
       "longitude": lon,
       "price": price,
-      "status": "Pending"
+      "price_per_kg": (price / kg),
+      "method": method,
+      "image_path": imagePath,
+      "seller_name": "Ahmad bin Razak"
     };
-
-    // 1. Try real DB
-    try {
-      await http.post(Uri.parse(addSurplusUrl), headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"item_name": name, "quantity_kg": kg, "latitude": lat, "longitude": lon}),
-      );
-    } catch (e) { print("DB List failed, using local backup"); }
-
-    // 2. Local Backup
     localSurplus.add(newItem);
     localOrders.add({
       "id": newItem['id'],
-      "buyer_name": "Ahmad bin Razak", // User is the seller
+      "buyer_name": "Awaiting Buyer",
+      "seller_name": "Ahmad bin Razak",
       "status": "Pending",
-      "delivery_method": "Selling", 
+      "buyer_approved": false,
+      "seller_approved": false,
+      "delivery_method": method, 
       "created_at": DateTime.now().toIso8601String(),
       "surplus": newItem
     });
     return true;
   }
 
-  // --- Fetch Logic (Combines real DB + local memory) ---
   static Future<List<dynamic>> getNeighborhoodSurplus(double lat, double lon) async {
-    List<dynamic> combined = List.from(localSurplus);
-    try {
-      final response = await http.post(Uri.parse(surplusUrl), headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"latitude": lat, "longitude": lon, "radius_km": 5.0}),
-      );
-      if (response.statusCode == 200) {
-        combined.addAll(jsonDecode(response.body)['clusters']);
-      }
-    } catch (e) { print("DB Fetch failed, using local demo data"); }
-    return combined;
+    return List.from(localSurplus);
   }
 
   static Future<List<dynamic>> getHistory(String name) async {
-    return localOrders; // For demo, we show everything we've done locally
+    return List.from(localOrders);
   }
 
-  // --- AI Logic ---
   static Future<Map<String, dynamic>?> getListingAssistant(File imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(assistantUrl));

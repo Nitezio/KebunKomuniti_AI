@@ -6,20 +6,20 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
-  // --- PRODUCTION URL ---
-  // 1. For local testing, use '10.0.2.2'. 
-  // 2. For your pitch, paste your Ngrok URL here (e.g. 'abc-123.ngrok-free.app')
-  static const String gatewayIp = '10.0.2.2'; 
+  // THE ADAPTIVE FIX: 
+  // Mobile Emulator needs 10.0.2.2
+  // Web Browser needs localhost
+  static String get _baseIp => kIsWeb ? 'localhost' : '10.0.2.2';
   
-  // Logic to handle both HTTP (local) and HTTPS (ngrok)
-  static String get gatewayUrl => gatewayIp.contains('ngrok') ? 'https://$gatewayIp' : 'http://$gatewayIp';
+  static String get gatewayUrl => 'http://$_baseIp';
 
-  // --- Ngrok Bypass Header ---
-  // This is required to skip the Ngrok warning page on the Free plan
-  static const Map<String, String> headers = {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "69420", 
-  };
+  // --- Endpoints ---
+  static String get diagnoseUrl => '$gatewayUrl/api/vision/api/ai/diagnose';
+  static String get assistantUrl => '$gatewayUrl/api/vision/api/ai/assistant';
+  static String get surplusUrl => '$gatewayUrl/api/data/api/data/surplus';
+  static String get addSurplusUrl => '$gatewayUrl/api/data/api/data/add';
+  static String get orderUrl => '$gatewayUrl/api/data/api/data/order';
+  static String get historyUrl => '$gatewayUrl/api/data/api/data/history';
 
   // --- Price Regulation Data ---
   static const Map<String, double> regulatedPrices = {
@@ -49,32 +49,37 @@ class ApiService {
 
   static Future<Map<String, dynamic>?> analyzePlant(XFile imageFile) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('$gatewayUrl/api/vision/api/ai/diagnose'));
-      request.headers.addAll({"ngrok-skip-browser-warning": "69420"});
+      var request = http.MultipartRequest('POST', Uri.parse(diagnoseUrl));
       if (kIsWeb) {
-        request.files.add(http.MultipartFile.fromBytes('file', await imageFile.readAsBytes(), filename: 'upload.jpg'));
-      } else {
-        request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-      }
-      var response = await request.send();
-      if (response.statusCode == 200) return jsonDecode(await response.stream.bytesToString());
-      return null;
-    } catch (e) { return null; }
-  }
-
-  static Future<Map<String, dynamic>?> getListingAssistant(XFile imageFile) async {
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse('$gatewayUrl/api/vision/api/ai/assistant'));
-      request.headers.addAll({"ngrok-skip-browser-warning": "69420"});
-      if (kIsWeb) {
-        request.files.add(http.MultipartFile.fromBytes('file', await imageFile.readAsBytes(), filename: 'upload.jpg'));
+        var bytes = await imageFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'upload.jpg'));
       } else {
         request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
       }
       var response = await request.send();
       if (response.statusCode == 200) {
-        String data = await response.stream.bytesToString();
-        return jsonDecode(data)['data'];
+        return jsonDecode(await response.stream.bytesToString());
+      }
+      return null;
+    } catch (e) {
+      print("AI Error: $e");
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getListingAssistant(XFile imageFile) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(assistantUrl));
+      if (kIsWeb) {
+        var bytes = await imageFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'upload.jpg'));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      }
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        String responseData = await response.stream.bytesToString();
+        return jsonDecode(responseData)['data'];
       }
       return null;
     } catch (e) { return null; }
@@ -99,7 +104,7 @@ class ApiService {
 
   static Future<String> pingBackend() async {
     try {
-      final response = await http.get(Uri.parse('$gatewayUrl/health'), headers: headers).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$gatewayUrl/health')).timeout(const Duration(seconds: 5));
       return response.statusCode == 200 ? "Success" : "Offline";
     } catch (e) { return "Offline"; }
   }

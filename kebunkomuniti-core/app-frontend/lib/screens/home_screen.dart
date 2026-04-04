@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -32,55 +33,51 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: isWideScreen ? 600 : double.infinity),
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 280.0, // Increased height for web clarity
-                floating: false,
-                pinned: true,
-                backgroundColor: Colors.green.shade700,
-                // THE FIX: Remove the title from FlexibleSpaceBar to prevent overlap
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topRight,
-                        end: Alignment.bottomLeft,
-                        colors: [Colors.green.shade400, Colors.green.shade800],
+          child: SingleChildScrollView( // Changed from CustomScrollView to fix overlap
+            child: Column(
+              children: [
+                // 1. New Overlap-Proof Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [Colors.green.shade400, Colors.green.shade800],
+                    ),
+                    borderRadius: isWideScreen 
+                      ? const BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32))
+                      : BorderRadius.zero,
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "MY ACCOUNT",
+                        style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 40), // Push down to avoid status bar
-                        const CircleAvatar(
-                          radius: 45,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.person, size: 55, color: Colors.green),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          "My Account",
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 1.2),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          "Ahmad bin Razak",
-                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "Community Farmer • $_serverStatus",
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
-                        ),
-                      ],
-                    ),
+                      const SizedBox(height: 24),
+                      const CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person, size: 60, color: Colors.green),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Ahmad bin Razak",
+                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "Community Farmer • $_serverStatus",
+                        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                      ),
+                    ],
                   ),
                 ),
-              ),
 
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                // 2. Content Body
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -110,8 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

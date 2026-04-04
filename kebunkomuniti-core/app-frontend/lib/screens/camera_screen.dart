@@ -165,7 +165,7 @@ class _CameraScreenState extends State<CameraScreen> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isHealthy ? Colors.green.shade800 : Colors.orange.shade800)
                       ),
                       Text(
-                        "Confidence: ${_diagnosisData!['confidence'].toString().contains('%') ? _diagnosisData!['confidence'] : _diagnosisData!['confidence'].toString() + '%'}", 
+                        "Confidence: ${_diagnosisData!['confidence']}", 
                         style: TextStyle(color: Colors.grey.shade500, fontSize: 13)
                       ),
                     ],

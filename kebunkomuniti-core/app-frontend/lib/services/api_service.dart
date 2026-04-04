@@ -42,9 +42,16 @@ class ApiService {
       if (isBuyer) localOrders[index]['buyer_approved'] = true;
       else localOrders[index]['seller_approved'] = true;
 
-      if (localOrders[index]['buyer_approved'] == true && localOrders[index]['seller_approved'] == true) {
+      // THE DEMO FIX:
+      // If it's your own listing (Awaiting Buyer) or a self-purchase, one click finishes it!
+      bool isSelfTransaction = localOrders[index]['buyer_name'] == "Awaiting Buyer" || 
+                               localOrders[index]['buyer_name'] == localOrders[index]['seller_name'];
+
+      if (isSelfTransaction || (localOrders[index]['buyer_approved'] == true && localOrders[index]['seller_approved'] == true)) {
         localOrders[index]['status'] = "Completed";
         localOrders[index]['completed_at'] = DateTime.now().toIso8601String();
+        localOrders[index]['buyer_approved'] = true;
+        localOrders[index]['seller_approved'] = true;
       }
     }
   }

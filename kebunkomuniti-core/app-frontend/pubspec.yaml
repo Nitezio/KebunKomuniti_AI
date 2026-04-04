@@ -38,6 +38,8 @@ dependencies:
   image_picker: ^1.1.2    # For snapping the plant photo
   flutter_map: ^7.0.2     # For the free OpenStreetMap
   latlong2: ^0.9.1        # For map GPS coordinates
+  url_launcher: ^6.3.1    # To open Google Maps directions
+  intl: ^0.19.0           # To format transaction dates
 
 dev_dependencies:
   flutter_test:

@@ -13,7 +13,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final LatLng _userLocation = const LatLng(3.8126, 103.3256); // Kuantan Center
-  List<dynamic> _allClusters = []; // Store raw data for filtering
+  List<dynamic> _allClusters = [];
   List<Marker> _visibleMarkers = [];
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
@@ -24,11 +24,8 @@ class _MapScreenState extends State<MapScreen> {
     _fetchMarketplaceData();
   }
 
-  // --- Filter Logic ---
   void _filterMarkers(String query) {
     List<Marker> filtered = [];
-    
-    // Always keep user location
     filtered.add(Marker(point: _userLocation, width: 60, height: 60, child: const Icon(Icons.my_location, color: Colors.blue, size: 30)));
 
     for (var cluster in _allClusters) {
@@ -54,10 +51,7 @@ class _MapScreenState extends State<MapScreen> {
         );
       }
     }
-
-    setState(() {
-      _visibleMarkers = filtered;
-    });
+    setState(() => _visibleMarkers = filtered);
   }
 
   void _showProduceDetails(Map<String, dynamic> cluster) {
@@ -104,7 +98,10 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ApiService.openMapDirections(cluster['latitude'], cluster['longitude']); // THE FIX
+                      },
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text("Directions"),
                     ),
@@ -112,9 +109,13 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order reserved! Please coordinate pickup with neighbor.")));
+                        // THE FIX: Place real order
+                        bool success = await ApiService.placeOrder(cluster, "Ahmad bin Razak", "Pickup");
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order placed! Check your Activity tab.")));
+                        }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text("Order Now"),
@@ -147,20 +148,10 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _fetchMarketplaceData() async {
     setState(() => _isLoading = true);
     var clusters = await ApiService.getNeighborhoodSurplus(_userLocation.latitude, _userLocation.longitude);
-
-    if (clusters.isEmpty) {
-      clusters = [
-        {"item_name": "Organic Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280},
-        {"item_name": "Fresh Spinach", "quantity_kg": 2.5, "latitude": 3.8100, "longitude": 103.3200},
-        {"item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8200, "longitude": 103.3300},
-      ];
-    }
-
     setState(() {
       _allClusters = clusters;
       _isLoading = false;
     });
-    
     _filterMarkers(_searchController.text);
   }
 
@@ -174,7 +165,7 @@ class _MapScreenState extends State<MapScreen> {
           controller: _searchController,
           onChanged: _filterMarkers,
           decoration: InputDecoration(
-            hintText: "Search produce (e.g. Chili)",
+            hintText: "Search produce...",
             prefixIcon: const Icon(Icons.search, color: Colors.green),
             filled: true,
             fillColor: Colors.grey.shade100,
@@ -185,9 +176,7 @@ class _MapScreenState extends State<MapScreen> {
         actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.green), onPressed: _fetchMarketplaceData)],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen()));
-        },
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SellScreen())),
         label: const Text("Sell Surplus"),
         icon: const Icon(Icons.add_a_photo),
         backgroundColor: Colors.green.shade700,

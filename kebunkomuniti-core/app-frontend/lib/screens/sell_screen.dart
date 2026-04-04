@@ -54,19 +54,25 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   Future<void> _submitListing() async {
-    if (_nameController.text.isEmpty) return;
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter produce name")));
+      return;
+    }
+    
     setState(() => _isUploading = true);
     
+    // THE FIX: Send to our new local backup engine
     bool success = await ApiService.listSurplus(
       _nameController.text, 
       double.tryParse(_weightController.text) ?? 0.0, 
-      3.8126, 103.3256
+      3.8126, 103.3256,
+      double.tryParse(_priceController.text) ?? 0.0,
     );
 
     setState(() => _isUploading = false);
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Produce listed for sale!")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Produce listed for sale! Check Activity tab.")));
     }
   }
 
@@ -91,7 +97,7 @@ class _SellScreenState extends State<SellScreen> {
                   border: Border.all(color: Colors.grey.shade300, width: 2, style: BorderStyle.solid)
                 ),
                 child: _imageFile == null 
-                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.green.shade700), const SizedBox(height: 8), const Text("Add photo for AI scan")])
+                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.green.shade700), const SizedBox(height: 8), const Text("Add photo (Optional)")])
                   : ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.file(_imageFile!, fit: BoxFit.cover)),
               ),
             ),
@@ -100,7 +106,7 @@ class _SellScreenState extends State<SellScreen> {
             
             const Text("Listing Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 16),
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: "Produce Name", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            TextField(controller: _nameController, decoration: InputDecoration(labelText: "Produce Name (e.g. Chili)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             const SizedBox(height: 16),
             Row(
               children: [

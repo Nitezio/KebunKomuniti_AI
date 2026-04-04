@@ -125,6 +125,11 @@ class _CameraScreenState extends State<CameraScreen> {
                   style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 ),
               if (_isLoading) const Center(child: Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator(color: Colors.green))),
+              if (_errorMessage.isNotEmpty) 
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Text(_errorMessage, textAlign: Center, style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                ),
               if (_diagnosisData != null) _buildDiagnosisCard(),
               const SizedBox(height: 40),
             ],

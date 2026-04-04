@@ -63,12 +63,13 @@ docker-compose up --build
 ```
 *The API Gateway will be listening on Port 80.*
 
-### 3. Frontend Setup
-Update the `api_service.dart` with your gateway address (Localhost or Ngrok URL) and run:
+### 3. Remote Tunneling (Production Demo)
+To expose the local API Gateway to external mobile devices for remote testing or live demonstrations:
 ```bash
-flutter pub get
-flutter run
+# Start Ngrok tunnel on NGINX port
+ngrok http 80
 ```
+*Update the `gatewayUrl` in the Flutter service with the generated public `https` link.*
 
 ---
 

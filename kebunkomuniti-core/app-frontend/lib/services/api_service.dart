@@ -33,14 +33,10 @@ class ApiService {
     "Tomatoes": 5.50, "Chili Padi": 16.00, "Spinach (Bayam)": 4.50, "Okra (Bendi)": 7.00, "Mustard Green (Sawi)": 5.00, "Eggplant (Terung)": 6.50, "Mango": 15.00, "Papaya": 4.50,
   };
 
-  // --- THE FIXED NEIGHBORHOOD LIST ---
-  // Moving these closer to the center (3.8126, 103.3256) so you see all 3 instantly.
   static List<Map<String, dynamic>> localSurplus = [
     {"id": 201, "item_name": "Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "price_per_kg": 5.50, "method": "Pickup", "seller_name": "Neighbor Siti"},
     {"id": 202, "item_name": "Spinach (Bayam)", "quantity_kg": 2.5, "latitude": 3.8110, "longitude": 103.3240, "price": 11.25, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Ali"},
     {"id": 203, "item_name": "Chili Padi", "quantity_kg": 1.2, "latitude": 3.8130, "longitude": 103.3270, "price": 19.20, "price_per_kg": 16.00, "method": "Pickup", "seller_name": "Neighbor Chong"},
-    {"id": 204, "item_name": "Okra (Bendi)", "quantity_kg": 3.0, "latitude": 3.8180, "longitude": 103.3220, "price": 21.00, "price_per_kg": 7.00, "method": "Pickup", "seller_name": "Neighbor Kumar"},
-    {"id": 205, "item_name": "Papaya", "quantity_kg": 10.0, "latitude": 3.8050, "longitude": 103.3350, "price": 45.00, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Tan"},
   ];
   
   static List<Map<String, dynamic>> localOrders = [];
@@ -95,16 +91,56 @@ class ApiService {
   }
 
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    localOrders.add({
-      "id": DateTime.now().millisecondsSinceEpoch, "buyer_name": buyerName, "seller_name": cluster['seller_name'] ?? "Neighbor", "status": "Pending", "delivery_method": method, "created_at": DateTime.now().toIso8601String(), "surplus": cluster
-    });
+    // If the user buys their own item (Demo mode), update the existing "Awaiting" order
+    final existingIndex = localOrders.indexWhere((o) => o['surplus']['id'] == cluster['id']);
+    
+    if (existingIndex != -1) {
+      localOrders[existingIndex]['buyer_name'] = buyerName;
+      localOrders[existingIndex]['status'] = "Pending"; // Changes from Awaiting to Pending
+    } else {
+      localOrders.add({
+        "id": DateTime.now().millisecondsSinceEpoch,
+        "buyer_name": buyerName,
+        "seller_name": cluster['seller_name'] ?? "Neighbor",
+        "status": "Pending", 
+        "delivery_method": method,
+        "created_at": DateTime.now().toIso8601String(),
+        "surplus": cluster
+      });
+    }
     return true;
   }
 
   static Future<bool> listSurplus(String name, double kg, double lat, double lon, double price, String method, String? imagePath) async {
-    localSurplus.add({
-      "id": DateTime.now().millisecondsSinceEpoch, "item_name": name, "quantity_kg": kg, "latitude": lat, "longitude": lon, "price": price, "price_per_kg": (price/kg), "method": method, "image_path": imagePath, "seller_name": "Ahmad bin Razak"
+    final int newId = DateTime.now().millisecondsSinceEpoch;
+    
+    final newItem = {
+      "id": newId, 
+      "item_name": name, 
+      "quantity_kg": kg, 
+      "latitude": lat, 
+      "longitude": lon, 
+      "price": price, 
+      "price_per_kg": (price/kg), 
+      "method": method, 
+      "image_path": imagePath, 
+      "seller_name": "Ahmad bin Razak"
+    };
+
+    // 1. Add to the map
+    localSurplus.add(newItem);
+
+    // 2. THE FIX: Also add to Activity immediately as "Awaiting Buyer"
+    localOrders.add({
+      "id": newId + 1, // Unique order ID
+      "buyer_name": "Awaiting Buyer",
+      "seller_name": "Ahmad bin Razak",
+      "status": "Pending", 
+      "delivery_method": method,
+      "created_at": DateTime.now().toIso8601String(),
+      "surplus": newItem
     });
+
     return true;
   }
 

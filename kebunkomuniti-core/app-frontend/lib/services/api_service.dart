@@ -29,10 +29,19 @@ class ApiService {
   static String get orderUrl => '$gatewayUrl/api/data/api/data/order';
   static String get historyUrl => '$gatewayUrl/api/data/api/data/history';
 
+  // --- Price Regulation Data (REQUIRED BY SELL SCREEN) ---
   static const Map<String, double> regulatedPrices = {
-    "Tomatoes": 5.50, "Chili Padi": 16.00, "Spinach (Bayam)": 4.50, "Okra (Bendi)": 7.00, "Mustard Green (Sawi)": 5.00, "Eggplant (Terung)": 6.50, "Mango": 15.00, "Papaya": 4.50,
+    "Tomatoes": 5.50,
+    "Chili Padi": 16.00,
+    "Spinach (Bayam)": 4.50,
+    "Okra (Bendi)": 7.00,
+    "Mustard Green (Sawi)": 5.00,
+    "Eggplant (Terung)": 6.50,
+    "Mango": 15.00,
+    "Papaya": 4.50,
   };
 
+  // --- Demo Data ---
   static List<Map<String, dynamic>> localSurplus = [
     {"id": 201, "item_name": "Tomatoes", "quantity_kg": 5.0, "latitude": 3.8150, "longitude": 103.3280, "price": 27.50, "price_per_kg": 5.50, "method": "Pickup", "seller_name": "Neighbor Siti"},
     {"id": 202, "item_name": "Spinach (Bayam)", "quantity_kg": 2.5, "latitude": 3.8110, "longitude": 103.3240, "price": 11.25, "price_per_kg": 4.50, "method": "Delivery", "seller_name": "Neighbor Ali"},
@@ -41,6 +50,7 @@ class ApiService {
   
   static List<Map<String, dynamic>> localOrders = [];
 
+  // --- TRANSACTION LOGIC ---
   static Future<void> approveTransaction(int orderId, bool isBuyer) async {
     final index = localOrders.indexWhere((o) => o['id'] == orderId);
     if (index != -1) {
@@ -57,6 +67,7 @@ class ApiService {
     }
   }
 
+  // --- AI SCAN ---
   static Future<Map<String, dynamic>?> analyzePlant(XFile imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(diagnoseUrl));
@@ -72,6 +83,7 @@ class ApiService {
     } catch (e) { return null; }
   }
 
+  // --- LISTING ASSISTANT ---
   static Future<Map<String, dynamic>?> getListingAssistant(XFile imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(assistantUrl));
@@ -90,13 +102,12 @@ class ApiService {
     } catch (e) { return null; }
   }
 
+  // --- ORDERING LOGIC ---
   static Future<bool> placeOrder(Map<String, dynamic> cluster, String buyerName, String method) async {
-    // If the user buys their own item (Demo mode), update the existing "Awaiting" order
     final existingIndex = localOrders.indexWhere((o) => o['surplus']['id'] == cluster['id']);
-    
     if (existingIndex != -1) {
       localOrders[existingIndex]['buyer_name'] = buyerName;
-      localOrders[existingIndex]['status'] = "Pending"; // Changes from Awaiting to Pending
+      localOrders[existingIndex]['status'] = "Pending";
     } else {
       localOrders.add({
         "id": DateTime.now().millisecondsSinceEpoch,
@@ -111,9 +122,9 @@ class ApiService {
     return true;
   }
 
+  // --- LISTING LOGIC (REQUIRED BY SELL SCREEN) ---
   static Future<bool> listSurplus(String name, double kg, double lat, double lon, double price, String method, String? imagePath) async {
     final int newId = DateTime.now().millisecondsSinceEpoch;
-    
     final newItem = {
       "id": newId, 
       "item_name": name, 
@@ -127,12 +138,11 @@ class ApiService {
       "seller_name": "Ahmad bin Razak"
     };
 
-    // 1. Add to the map
     localSurplus.add(newItem);
 
-    // 2. THE FIX: Also add to Activity immediately as "Awaiting Buyer"
+    // Sync with Activity ledger
     localOrders.add({
-      "id": newId + 1, // Unique order ID
+      "id": newId + 1,
       "buyer_name": "Awaiting Buyer",
       "seller_name": "Ahmad bin Razak",
       "status": "Pending", 
@@ -140,7 +150,6 @@ class ApiService {
       "created_at": DateTime.now().toIso8601String(),
       "surplus": newItem
     });
-
     return true;
   }
 
